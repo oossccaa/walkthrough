@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/* 主色:藍繡球(soft periwinkle blue) */
+@theme {
+  --color-accent-50: #f4f7fb;
+  --color-accent-100: #e8eef7;
+  --color-accent-200: #cfdcee;
+  --color-accent-300: #aac2e0;
+  --color-accent-400: #84a4d0;
+  --color-accent-500: #6489c2;
+  --color-accent-600: #4d6ea8;
+  --color-accent-700: #415b8a;
+  --color-accent-800: #394e73;
+  --color-accent-900: #32425f;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-accent-50 text-neutral-800 antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
