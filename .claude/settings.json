@@ -5,7 +5,11 @@
       "Bash(npm run *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(gh run *)",
+      "Bash(gh api *)",
+      "Bash(sed -i '' 's/RosterNote/Tiedto/g' vite.config.ts index.html src/pages/HomePage.tsx)",
+      "Bash(sed -i '' 's/^# 戀愛攻略筆記/# Tiedto/' README.md)"
     ]
   }
 }

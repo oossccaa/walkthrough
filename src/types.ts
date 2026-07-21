@@ -1,6 +1,7 @@
-// 依 CLAUDE.md 資料模型定義;日期一律存 ISO 字串(yyyy-MM-dd 或完整 ISO)
+// 資料模型;日期一律存 ISO 字串(yyyy-MM-dd 或完整 ISO)
 
-export type PersonStatus = 'crush' | 'ambiguous' | 'dating' | 'archived'
+// 身份:決定這個人可以記錄哪些模組(對象最完整)
+export type PersonRole = 'partner' | 'friend' | 'coworker' | 'family'
 
 export interface Person {
   id: string
@@ -8,9 +9,8 @@ export interface Person {
   nickname?: string
   birthday?: string
   metAt?: { date?: string; place?: string; story?: string }
-  status: PersonStatus
-  statusHistory: { status: PersonStatus; date: string }[]
-  color?: string // 主題色 key(多對象模式下每位可不同)
+  role: PersonRole
+  color?: string // 每個人可有自己的主題色 key
   avatar?: string
   notes?: string
   createdAt: string

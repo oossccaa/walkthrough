@@ -20,13 +20,13 @@ export function ItineraryFab() {
           <>
             <button
               onClick={() => { setMode('view'); setMenuOpen(false) }}
-              className="rounded-full bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-lg border border-neutral-100"
+              className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-lg border border-neutral-100"
             >
               觀看行程
             </button>
             <button
               onClick={() => { setMode('add'); setMenuOpen(false) }}
-              className="rounded-full bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-lg border border-neutral-100"
+              className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-lg border border-neutral-100"
             >
               新增行程
             </button>

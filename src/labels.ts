@@ -1,18 +1,37 @@
-import type { PersonStatus, PreferenceCategory, Sentiment, PlaceType, RelationType } from './types'
+import type { PersonRole, PreferenceCategory, Sentiment, PlaceType, RelationType } from './types'
 
-export const STATUS_LABEL: Record<PersonStatus, string> = {
-  crush: '單戀',
-  ambiguous: '曖昧',
-  dating: '交往中',
-  archived: '封存',
+export const ROLE_LABEL: Record<PersonRole, string> = {
+  partner: '對象',
+  friend: '朋友',
+  coworker: '同事',
+  family: '家人',
 }
 
-// 顏色收斂:只有「交往中」用主色,其餘中性灰
-export const STATUS_STYLE: Record<PersonStatus, string> = {
-  crush: 'bg-neutral-100 text-neutral-500',
-  ambiguous: 'bg-neutral-100 text-neutral-500',
-  dating: 'bg-accent-100 text-accent-700',
-  archived: 'bg-neutral-100 text-neutral-400',
+// 顏色收斂:只有「對象」用主色,其餘中性灰
+export const ROLE_STYLE: Record<PersonRole, string> = {
+  partner: 'bg-accent-100 text-accent-700',
+  friend: 'bg-neutral-100 text-neutral-500',
+  coworker: 'bg-neutral-100 text-neutral-500',
+  family: 'bg-neutral-100 text-neutral-500',
+}
+
+export const ROLE_ORDER: PersonRole[] = ['partner', 'friend', 'coworker', 'family']
+
+// 各身份可記錄的模組(對象最完整)
+export type ModuleKey = 'quick' | 'preferences' | 'places' | 'relations' | 'gifts' | 'anniversaries' | 'promises'
+
+export const ROLE_MODULES: Record<PersonRole, ModuleKey[]> = {
+  partner: ['quick', 'preferences', 'places', 'relations', 'gifts', 'anniversaries', 'promises'],
+  friend: ['quick', 'preferences', 'gifts', 'anniversaries'],
+  family: ['quick', 'preferences', 'gifts', 'anniversaries'],
+  coworker: ['quick', 'preferences', 'anniversaries'],
+}
+
+export const ROLE_HINT: Record<PersonRole, string> = {
+  partner: '最完整:喜好、地點、人物、禮物、紀念日、約定',
+  friend: '喜好、禮物、紀念日',
+  family: '喜好、禮物、紀念日',
+  coworker: '喜好、紀念日',
 }
 
 export const CATEGORY_LABEL: Record<PreferenceCategory, string> = {
@@ -50,8 +69,8 @@ export const SENTIMENT_DOT: Record<Sentiment, string> = {
 }
 
 export const PLACE_TYPE_LABEL: Record<PlaceType, string> = {
-  visited: '她去過',
-  she_wants_to_go: '她想去',
+  visited: '去過',
+  she_wants_to_go: '想去',
   promised_together: '約好一起去',
 }
 

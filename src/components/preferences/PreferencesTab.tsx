@@ -128,7 +128,7 @@ function PreferenceSheet({ personId, existing, onClose }: {
         <Field label="備註(選填)">
           <input className={inputCls} value={note} onChange={e => setNote(e.target.value)} placeholder="例:不吃香菜但可接受九層塔" />
         </Field>
-        <Field label="她什麼時候提到的?(選填)">
+        <Field label="什麼時候提到的?(選填)">
           <input className={inputCls} value={sourceContext} onChange={e => setSourceContext(e.target.value)} placeholder="例:第一次吃越南河粉時說的" />
         </Field>
         <PrimaryButton onClick={submit}>{existing ? '儲存' : '新增'}</PrimaryButton>

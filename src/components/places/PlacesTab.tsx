@@ -101,7 +101,7 @@ function PlaceSheet({ personId, existing, onClose }: {
           </Field>
         )}
         <Field label="備註(選填)">
-          <input className={inputCls} value={note} onChange={e => setNote(e.target.value)} placeholder="例:她說夜景很美" />
+          <input className={inputCls} value={note} onChange={e => setNote(e.target.value)} placeholder="例:夜景很美,晚上去更好" />
         </Field>
         <PrimaryButton onClick={submit}>{existing ? '儲存' : '新增'}</PrimaryButton>
         {existing && (

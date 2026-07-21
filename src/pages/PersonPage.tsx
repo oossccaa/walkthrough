@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { STATUS_LABEL, STATUS_STYLE } from '../labels'
+import { ROLE_LABEL, ROLE_STYLE, ROLE_MODULES, type ModuleKey } from '../labels'
 import { daysSince, fmt } from '../utils/dates'
 import { useApp } from '../store'
 import { db } from '../db/db'
@@ -15,22 +15,20 @@ import { GiftsTab } from '../components/gifts/GiftsTab'
 import { AnniversariesTab } from '../components/anniversaries/AnniversariesTab'
 import { PromisesTab } from '../components/promises/PromisesTab'
 
-const TABS = [
-  { key: 'quick', label: '速查' },
-  { key: 'preferences', label: '喜好' },
-  { key: 'places', label: '地點' },
-  { key: 'relations', label: '人物' },
-  { key: 'gifts', label: '禮物' },
-  { key: 'anniversaries', label: '紀念日' },
-  { key: 'promises', label: '約定' },
-] as const
-
-type TabKey = (typeof TABS)[number]['key']
+const TAB_LABEL: Record<ModuleKey, string> = {
+  quick: '速查',
+  preferences: '喜好',
+  places: '地點',
+  relations: '人物',
+  gifts: '禮物',
+  anniversaries: '紀念日',
+  promises: '約定',
+}
 
 export function PersonPage() {
   const { id } = useParams()
-  const { persons, multiMode, ready } = useApp()
-  const [tab, setTab] = useState<TabKey>('quick')
+  const { persons, ready } = useApp()
+  const [tab, setTab] = useState<ModuleKey>('quick')
   const person = persons.find(p => p.id === id)
 
   const preferences = useLiveQuery(() => db.preferences.where('personId').equals(id!).toArray(), [id]) ?? []
@@ -41,8 +39,8 @@ export function PersonPage() {
   const promises = useLiveQuery(() => db.promises.where('personId').equals(id!).toArray(), [id]) ?? []
   const itineraries = useLiveQuery(() => db.itineraries.where('personId').equals(id!).toArray(), [id]) ?? []
 
-  // 多對象模式:這一頁改用她的專屬色系,離開時還原全域主題
-  const personColor = multiMode && person && isThemeKey(person.color) ? person.color : null
+  // 這一頁改用這個人的專屬色系,離開時還原全域主題
+  const personColor = person && isThemeKey(person.color) ? person.color : null
   useEffect(() => {
     if (personColor) {
       applyPersonTheme(personColor)
@@ -55,22 +53,24 @@ export function PersonPage() {
   if (!person) {
     return (
       <div className="py-20 text-center text-neutral-400">
-        找不到這位對象 <Link to="/" className="text-accent-600 underline">回首頁</Link>
+        找不到這個人 <Link to="/" className="text-accent-600 underline">回名冊</Link>
       </div>
     )
   }
 
-  const datingEntry = [...person.statusHistory].reverse().find(h => h.status === 'dating')
+  const modules = ROLE_MODULES[person.role]
+  const activeTab = modules.includes(tab) ? tab : 'quick'
+
+  // 對象:若有「在一起」紀念日,顯示在一起天數
+  const together = person.role === 'partner'
+    ? anniversaries.find(a => a.title.includes('在一起'))
+    : undefined
 
   return (
     <div className="space-y-4">
       <header className="pt-2">
         <div className="mb-3 flex items-center justify-between">
-          {multiMode ? (
-            <Link to="/" className="text-sm text-neutral-400">‹ 返回</Link>
-          ) : (
-            <span className="text-sm font-bold text-neutral-400">戀愛攻略筆記</span>
-          )}
+          <Link to="/" className="text-sm text-neutral-400">‹ 名冊</Link>
           <div className="flex items-center gap-4">
             <Link to="/settings" className="text-sm text-neutral-400">設定</Link>
             <Link to={`/person/${person.id}/edit`} className="text-sm font-medium text-accent-600">編輯</Link>
@@ -84,13 +84,13 @@ export function PersonPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-black">{person.name}</h1>
               {person.nickname && <span className="text-sm text-neutral-400">{person.nickname}</span>}
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[person.status]}`}>
-                {STATUS_LABEL[person.status]}
+              <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${ROLE_STYLE[person.role]}`}>
+                {ROLE_LABEL[person.role]}
               </span>
             </div>
             <div className="mt-1 space-y-0.5 text-xs text-neutral-400">
-              {person.status === 'dating' && datingEntry && (
-                <p className="font-bold text-accent-600">在一起 {daysSince(datingEntry.date)} 天</p>
+              {together && (
+                <p className="font-bold text-accent-600">在一起 {daysSince(together.date)} 天</p>
               )}
               {person.birthday && <p>生日 {fmt(person.birthday)}</p>}
               {person.metAt?.date && (
@@ -110,23 +110,24 @@ export function PersonPage() {
 
       <nav className="sticky top-0 z-10 -mx-4 bg-accent-50/90 px-4 py-2 backdrop-blur">
         <div className="flex gap-2 overflow-x-auto">
-          {TABS.map(t => (
+          {modules.map(m => (
             <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                tab === t.key ? 'bg-accent-500 text-white' : 'bg-white text-neutral-500 border border-neutral-200'
+              key={m}
+              onClick={() => setTab(m)}
+              className={`shrink-0 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === m ? 'bg-accent-500 text-white' : 'bg-white text-neutral-500 border border-neutral-200'
               }`}
             >
-              {t.label}
+              {TAB_LABEL[m]}
             </button>
           ))}
         </div>
       </nav>
 
       <div className="pb-24">
-        {tab === 'quick' && (
+        {activeTab === 'quick' && (
           <QuickCard
+            role={person.role}
             preferences={preferences}
             gifts={gifts}
             anniversaries={anniversaries}
@@ -134,12 +135,12 @@ export function PersonPage() {
             itineraries={itineraries}
           />
         )}
-        {tab === 'preferences' && <PreferencesTab personId={person.id} items={preferences} />}
-        {tab === 'places' && <PlacesTab personId={person.id} items={places} />}
-        {tab === 'relations' && <RelationsTab personId={person.id} items={relations} />}
-        {tab === 'gifts' && <GiftsTab personId={person.id} items={gifts} />}
-        {tab === 'anniversaries' && <AnniversariesTab personId={person.id} items={anniversaries} />}
-        {tab === 'promises' && <PromisesTab personId={person.id} items={promises} />}
+        {activeTab === 'preferences' && <PreferencesTab personId={person.id} items={preferences} />}
+        {activeTab === 'places' && <PlacesTab personId={person.id} items={places} />}
+        {activeTab === 'relations' && <RelationsTab personId={person.id} items={relations} />}
+        {activeTab === 'gifts' && <GiftsTab personId={person.id} items={gifts} />}
+        {activeTab === 'anniversaries' && <AnniversariesTab personId={person.id} items={anniversaries} />}
+        {activeTab === 'promises' && <PromisesTab personId={person.id} items={promises} />}
       </div>
     </div>
   )

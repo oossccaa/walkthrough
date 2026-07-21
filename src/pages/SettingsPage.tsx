@@ -10,23 +10,7 @@ import { getAccessToken, findBackupFile, uploadBackup, downloadBackup } from '..
 import { notificationsEnabled, enableNotifications, REMIND_DAYS_AHEAD } from '../notify'
 
 export function SettingsPage() {
-  const { multiMode, setMultiMode, loadDemo, resetAll, persons, theme, setTheme, setPrimaryId } = useApp()
-  const [pickingPrimary, setPickingPrimary] = useState(false)
-  const activePersons = persons.filter(p => p.status !== 'archived')
-
-  const toggleMulti = () => {
-    if (!multiMode) {
-      setMultiMode(true)
-      return
-    }
-    // 關閉多對象模式:多位時要先選一位當主要,其他資料保留
-    if (activePersons.length > 1) {
-      setPickingPrimary(true)
-    } else {
-      setPrimaryId(activePersons[0]?.id ?? persons[0]?.id ?? null)
-      setMultiMode(false)
-    }
-  }
+  const { loadDemo, resetAll, persons, theme, setTheme } = useApp()
 
   return (
     <div className="space-y-4 pb-10">
@@ -49,44 +33,8 @@ export function SettingsPage() {
             />
           ))}
         </div>
-        <p className="mt-1 text-xs text-neutral-400">目前:{THEMES[theme].label}</p>
+        <p className="mt-1 text-xs text-neutral-400">目前:{THEMES[theme].label}(每個人也可以在編輯頁設定專屬色)</p>
       </SectionCard>
-
-      <SectionCard title="模式">
-        <div className="flex items-center justify-between py-1">
-          <div className="pr-4">
-            <p className="text-sm font-medium">多對象模式</p>
-            <p className="text-xs text-neutral-400">開啟後首頁改為對象列表,每位可設定專屬顏色</p>
-          </div>
-          <Toggle on={multiMode} onToggle={toggleMulti} />
-        </div>
-      </SectionCard>
-
-      {pickingPrimary && (
-        <BottomSheet open onClose={() => setPickingPrimary(false)} title="選擇主要對象">
-          <p className="mb-3 text-xs text-neutral-400">
-            關閉多對象模式後,首頁只顯示主要對象;其他人的資料會保留,重新開啟多對象模式即可看到。
-          </p>
-          <div className="space-y-2">
-            {activePersons.map(p => (
-              <button
-                key={p.id}
-                onClick={() => {
-                  setPrimaryId(p.id)
-                  setMultiMode(false)
-                  setPickingPrimary(false)
-                }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-left active:bg-accent-50"
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-400 font-black text-white">
-                  {p.name.slice(0, 1)}
-                </span>
-                <span className="font-medium">{p.name}</span>
-              </button>
-            ))}
-          </div>
-        </BottomSheet>
-      )}
 
       <NotifySection />
       <LocalBackupSection />

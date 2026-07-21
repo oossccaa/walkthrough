@@ -25,6 +25,16 @@ class LoveDB extends Dexie {
       promises: 'id, personId, completed',
       itineraries: 'id, personId, date',
     })
+    // v2:狀態(status)改為身份(role),舊資料一律視為「對象」
+    this.version(2).stores({
+      persons: 'id, role, updatedAt',
+    }).upgrade(tx =>
+      tx.table('persons').toCollection().modify(p => {
+        if (!p.role) p.role = 'partner'
+        delete p.status
+        delete p.statusHistory
+      }),
+    )
   }
 }
 

@@ -1,18 +1,20 @@
 import { SectionCard, EmptyState } from '../ui'
-import { SENTIMENT_LABEL, SENTIMENT_STYLE, RELATION_TYPE_LABEL } from '../../labels'
+import { SENTIMENT_LABEL, SENTIMENT_STYLE, RELATION_TYPE_LABEL, ROLE_MODULES } from '../../labels'
 import { daysUntilNext, fmt } from '../../utils/dates'
 import { today } from '../../db/repo'
 import { ItineraryTimeline } from '../itinerary/ItineraryFab'
-import type { Preference, Gift, Anniversary, RelationPerson, Itinerary } from '../../types'
+import type { Preference, Gift, Anniversary, RelationPerson, Itinerary, PersonRole } from '../../types'
 
-/** 約會前速查卡:一頁看完下次行程、地雷、最新喜好、願望禮物、紀念日、重要人物 */
-export function QuickCard({ preferences, gifts, anniversaries, relations, itineraries }: {
+/** 見面前速查卡:一頁看完下次行程、地雷、最新喜好、想要的禮物、紀念日、重要人物 */
+export function QuickCard({ role, preferences, gifts, anniversaries, relations, itineraries }: {
+  role: PersonRole
   preferences: Preference[]
   gifts: Gift[]
   anniversaries: Anniversary[]
   relations: RelationPerson[]
   itineraries: Itinerary[]
 }) {
+  const modules = ROLE_MODULES[role]
   const nextItinerary = [...itineraries]
     .filter(i => i.date >= today())
     .sort((a, b) => a.date.localeCompare(b.date))[0]
@@ -69,20 +71,22 @@ export function QuickCard({ preferences, gifts, anniversaries, relations, itiner
         </div>
       </SectionCard>
 
-      <SectionCard title="她提過想要的">
-        {wishlist.length === 0 ? (
-          <EmptyState text="還沒記錄她想要的東西" />
-        ) : (
-          <ul className="space-y-2">
-            {wishlist.map(g => (
-              <li key={g.id}>
-                <span className="font-medium">{g.name}</span>
-                {g.sourceContext && <p className="text-xs text-neutral-500">{g.sourceContext}</p>}
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
+      {modules.includes('gifts') && (
+        <SectionCard title="提過想要的">
+          {wishlist.length === 0 ? (
+            <EmptyState text="還沒記錄想要的東西" />
+          ) : (
+            <ul className="space-y-2">
+              {wishlist.map(g => (
+                <li key={g.id}>
+                  <span className="font-medium">{g.name}</span>
+                  {g.sourceContext && <p className="text-xs text-neutral-500">{g.sourceContext}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      )}
 
       <SectionCard title="紀念日倒數">
         <ul className="space-y-2">
@@ -100,21 +104,23 @@ export function QuickCard({ preferences, gifts, anniversaries, relations, itiner
         </ul>
       </SectionCard>
 
-      <SectionCard title="重要人物小抄">
-        {keyPeople.length === 0 ? (
-          <EmptyState text="還沒記錄重要人物" />
-        ) : (
-          <ul className="space-y-2">
-            {keyPeople.map(r => (
-              <li key={r.id}>
-                <span className="font-medium">{r.name}</span>
-                <span className="ml-1 text-xs text-neutral-400">{r.role ?? RELATION_TYPE_LABEL[r.type]}</span>
-                <p className="text-xs text-neutral-500">{r.traits ?? r.note}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
+      {modules.includes('relations') && (
+        <SectionCard title="重要人物小抄">
+          {keyPeople.length === 0 ? (
+            <EmptyState text="還沒記錄重要人物" />
+          ) : (
+            <ul className="space-y-2">
+              {keyPeople.map(r => (
+                <li key={r.id}>
+                  <span className="font-medium">{r.name}</span>
+                  <span className="ml-1 text-xs text-neutral-400">{r.role ?? RELATION_TYPE_LABEL[r.type]}</span>
+                  <p className="text-xs text-neutral-500">{r.traits ?? r.note}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      )}
     </div>
   )
 }

@@ -11,9 +11,9 @@ export function GiftsTab({ personId, items }: { personId: string; items: Gift[] 
 
   return (
     <div className="space-y-3">
-      <SectionCard title="她想要的" subtitle="願望清單,送禮靈感來源">
+      <SectionCard title="想要的" subtitle="願望清單,送禮靈感來源">
         {wishlist.length === 0 ? (
-          <EmptyState text="還沒記錄她想要的東西" />
+          <EmptyState text="還沒記錄想要的東西" />
         ) : (
           <ul className="divide-y divide-neutral-100">
             {wishlist.map(g => (
@@ -52,7 +52,7 @@ export function GiftsTab({ personId, items }: { personId: string; items: Gift[] 
                     {fmt(g.date)}
                     {g.price != null && ` ・ $${g.price.toLocaleString()}`}
                   </p>
-                  {g.reaction && <p className="mt-0.5 text-xs text-neutral-500">她的反應:{g.reaction}</p>}
+                  {g.reaction && <p className="mt-0.5 text-xs text-neutral-500">對方的反應:{g.reaction}</p>}
                 </button>
               </li>
             ))}
@@ -106,7 +106,7 @@ function GiftSheet({ personId, existing, onClose }: {
       <div className="space-y-4">
         <Field label="類型">
           <div className="flex gap-2">
-            <Chip selected={direction === 'wishlist'} onClick={() => setDirection('wishlist')}>她想要的</Chip>
+            <Chip selected={direction === 'wishlist'} onClick={() => setDirection('wishlist')}>想要的</Chip>
             <Chip selected={direction === 'given'} onClick={() => setDirection('given')}>送過的</Chip>
           </div>
         </Field>
@@ -123,13 +123,13 @@ function GiftSheet({ personId, existing, onClose }: {
                 <input className={inputCls} value={occasion} onChange={e => setOccasion(e.target.value)} placeholder="生日、道歉…" />
               </Field>
             </div>
-            <Field label="她的反應(選填)">
+            <Field label="對方的反應(選填)">
               <input className={inputCls} value={reaction} onChange={e => setReaction(e.target.value)} placeholder="例:超喜歡,放在床頭每天點" />
             </Field>
           </>
         ) : (
           <>
-            <Field label="她什麼時候提到的?(選填)">
+            <Field label="什麼時候提到的?(選填)">
               <input className={inputCls} value={sourceContext} onChange={e => setSourceContext(e.target.value)} placeholder="例:逛街時盯著看很久" />
             </Field>
             <label className="flex items-center gap-2 text-sm">

@@ -1,6 +1,6 @@
 import type { Table } from 'dexie'
 import { db, ALL_TABLES } from './db'
-import type { Person, PersonStatus } from '../types'
+import type { Person, PersonRole } from '../types'
 
 export const uid = () => crypto.randomUUID()
 export const nowIso = () => new Date().toISOString()
@@ -26,17 +26,14 @@ export const anniversariesRepo = crud(() => db.anniversaries)
 export const promisesRepo = crud(() => db.promises)
 export const itinerariesRepo = crud(() => db.itineraries)
 
-// ---- Person(狀態變更要寫入 statusHistory,刪除要連動清掉所有子資料) ----
+// ---- Person(刪除要連動清掉所有子資料) ----
 
-export async function addPerson(data: Partial<Person> & { name: string }): Promise<Person> {
+export async function addPerson(data: Partial<Person> & { name: string; role: PersonRole }): Promise<Person> {
   const now = nowIso()
-  const status: PersonStatus = data.status ?? 'ambiguous'
   const p: Person = {
     id: uid(),
-    statusHistory: [{ status, date: today() }],
     createdAt: now,
     ...data,
-    status,
     updatedAt: now,
   }
   await db.persons.add(p)
@@ -44,13 +41,7 @@ export async function addPerson(data: Partial<Person> & { name: string }): Promi
 }
 
 export async function updatePerson(id: string, patch: Partial<Person>) {
-  const person = await db.persons.get(id)
-  if (!person) return
-  const next: Partial<Person> = { ...patch, updatedAt: nowIso() }
-  if (patch.status && patch.status !== person.status) {
-    next.statusHistory = [...person.statusHistory, { status: patch.status, date: today() }]
-  }
-  await db.persons.update(id, next)
+  await db.persons.update(id, { ...patch, updatedAt: nowIso() })
 }
 
 export async function deletePerson(id: string) {

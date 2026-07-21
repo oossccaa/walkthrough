@@ -32,7 +32,7 @@ export function Chip({ selected, onClick, children, className = '' }: {
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm border transition-colors ${
+      className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm border transition-colors ${
         selected
           ? 'bg-accent-500 text-white border-accent-500'
           : 'bg-white text-neutral-600 border-neutral-200 active:bg-accent-50'

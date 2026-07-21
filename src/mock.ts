@@ -29,12 +29,8 @@ export const mockPersons: Person[] = [
     nickname: '雨寶',
     birthday: '1999-03-14',
     metAt: { date: '2025-09-20', place: '朋友生日聚會', story: '共同朋友阿凱的生日局,坐隔壁聊了一整晚' },
-    status: 'dating',
+    role: 'partner',
     color: 'rose',
-    statusHistory: [
-      { status: 'ambiguous', date: '2025-10-05' },
-      { status: 'dating', date: '2025-12-24' },
-    ],
     notes: '怕冷,出門要提醒她帶外套',
     createdAt: '2025-09-21T10:00:00Z',
     updatedAt: '2026-07-18T10:00:00Z',
@@ -44,11 +40,19 @@ export const mockPersons: Person[] = [
     name: '婷婷',
     birthday: '2000-11-02',
     metAt: { date: '2026-05-10', place: '健身房團課' },
-    status: 'ambiguous',
+    role: 'friend',
     color: 'violet',
-    statusHistory: [{ status: 'ambiguous', date: '2026-06-01' }],
     createdAt: '2026-05-11T10:00:00Z',
     updatedAt: '2026-07-10T10:00:00Z',
+  },
+  {
+    id: 'p3',
+    name: '志明',
+    role: 'coworker',
+    color: 'teal',
+    notes: '隔壁組 PM,合作案窗口',
+    createdAt: '2026-03-01T10:00:00Z',
+    updatedAt: '2026-07-01T10:00:00Z',
   },
 ]
 
@@ -64,6 +68,8 @@ export const mockPreferences: Preference[] = [
   { id: 'pref9', personId: 'p1', category: 'music', name: '爵士', sentiment: 'dislike', note: '覺得想睡,約會別選爵士酒吧', createdAt: '2026-03-08T00:00:00Z', updatedAt: '2026-03-08T00:00:00Z' },
   { id: 'pref10', personId: 'p2', category: 'food', name: '甜點', sentiment: 'love', note: '千層蛋糕控', createdAt: '2026-06-05T00:00:00Z', updatedAt: '2026-06-05T00:00:00Z' },
   { id: 'pref11', personId: 'p2', category: 'drink', name: '美式咖啡', sentiment: 'like', note: '健身完會喝', createdAt: '2026-06-20T00:00:00Z', updatedAt: '2026-06-20T00:00:00Z' },
+  { id: 'pref12', personId: 'p3', category: 'drink', name: '拿鐵(燕麥奶)', sentiment: 'love', note: '開會前幫帶一杯,事情都好談', createdAt: '2026-04-01T00:00:00Z', updatedAt: '2026-04-01T00:00:00Z' },
+  { id: 'pref13', personId: 'p3', category: 'food', name: '香菜', sentiment: 'hate', note: '訂便當要注意', createdAt: '2026-05-12T00:00:00Z', updatedAt: '2026-05-12T00:00:00Z' },
 ]
 
 export const mockPlaces: Place[] = [
@@ -96,6 +102,7 @@ export const mockAnniversaries: Anniversary[] = [
   { id: 'a3', personId: 'p1', title: '在一起', date: '2025-12-24', recurring: true, note: '平安夜告白成功' },
   { id: 'a4', personId: 'p1', title: '她的生日', date: '1999-03-14', recurring: true, note: '想要儀式感,提早訂餐廳' },
   { id: 'a5', personId: 'p2', title: '第一次見面', date: '2026-05-10', recurring: true },
+  { id: 'a6', personId: 'p3', title: '他的生日', date: '1995-08-20', recurring: true, note: '訂會議室慶生,揪整組' },
 ]
 
 export const mockItineraries: Itinerary[] = [
@@ -106,7 +113,7 @@ export const mockItineraries: Itinerary[] = [
     stops: [
       { id: 'its1', place: '大稻埕碼頭', timeType: 'range', startTime: '16:00', endTime: '18:00', note: '租 YouBike 沿河騎' },
       { id: 'its2', place: '夏日食堂', timeType: 'fixed', startTime: '18:30', note: '訂位 2 位,靠窗' },
-      { id: 'its3', place: '河岸酒吧', timeType: 'range', startTime: '20:00', endTime: '22:00', note: '她只喝 highball' },
+      { id: 'its3', place: '河岸酒吧', timeType: 'range', startTime: '20:00', endTime: '22:00', note: '只喝 highball' },
     ],
     createdAt: '2026-07-15T10:00:00Z',
     updatedAt: '2026-07-15T10:00:00Z',

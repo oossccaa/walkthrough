@@ -12,9 +12,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: '戀愛攻略筆記',
-        short_name: '攻略筆記',
-        description: '約會前 30 秒速查的個人戀愛筆記',
+        name: 'Tiedto',
+        short_name: 'Tiedto',
+        description: '記下身邊每個人的喜好與大小事',
         lang: 'zh-TW',
         display: 'standalone',
         theme_color: '#6489c2',
