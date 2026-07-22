@@ -15,14 +15,18 @@ import { GiftsTab } from '../components/gifts/GiftsTab'
 import { AnniversariesTab } from '../components/anniversaries/AnniversariesTab'
 import { PromisesTab } from '../components/promises/PromisesTab'
 
-const TAB_LABEL: Record<ModuleKey, string> = {
-  quick: '速查',
-  preferences: '喜好',
-  places: '地點',
-  relations: '人物',
-  gifts: '禮物',
-  anniversaries: '紀念日',
-  promises: '約定',
+// 「紀念日/約定」是對象限定的說法,其他身份用中性詞
+function tabLabel(m: ModuleKey, isPartner: boolean): string {
+  const labels: Record<ModuleKey, string> = {
+    quick: '速查',
+    preferences: '喜好',
+    places: '地點',
+    relations: '人物',
+    gifts: '禮物',
+    anniversaries: isPartner ? '紀念日' : '重要日子',
+    promises: isPartner ? '約定' : '承諾',
+  }
+  return labels[m]
 }
 
 export function PersonPage() {
@@ -92,6 +96,9 @@ export function PersonPage() {
               {together && (
                 <p className="font-bold text-accent-600">在一起 {daysSince(together.date)} 天</p>
               )}
+              {(person.company || person.jobTitle) && (
+                <p>{[person.company, person.jobTitle].filter(Boolean).join('・')}</p>
+              )}
               {person.birthday && <p>生日 {fmt(person.birthday)}</p>}
               {person.metAt?.date && (
                 <p>{fmt(person.metAt.date)} 認識{person.metAt.place && `於${person.metAt.place}`}</p>
@@ -118,7 +125,7 @@ export function PersonPage() {
                 activeTab === m ? 'bg-accent-500 text-white' : 'bg-white text-neutral-500 border border-neutral-200'
               }`}
             >
-              {TAB_LABEL[m]}
+              {tabLabel(m, person.role === 'partner')}
             </button>
           ))}
         </div>
@@ -133,14 +140,15 @@ export function PersonPage() {
             anniversaries={anniversaries}
             relations={relations}
             itineraries={itineraries}
+            promises={promises}
           />
         )}
         {activeTab === 'preferences' && <PreferencesTab personId={person.id} items={preferences} />}
         {activeTab === 'places' && <PlacesTab personId={person.id} items={places} />}
-        {activeTab === 'relations' && <RelationsTab personId={person.id} items={relations} />}
+        {activeTab === 'relations' && <RelationsTab personId={person.id} role={person.role} items={relations} />}
         {activeTab === 'gifts' && <GiftsTab personId={person.id} items={gifts} />}
-        {activeTab === 'anniversaries' && <AnniversariesTab personId={person.id} items={anniversaries} />}
-        {activeTab === 'promises' && <PromisesTab personId={person.id} items={promises} />}
+        {activeTab === 'anniversaries' && <AnniversariesTab personId={person.id} role={person.role} items={anniversaries} />}
+        {activeTab === 'promises' && <PromisesTab personId={person.id} role={person.role} items={promises} />}
       </div>
     </div>
   )

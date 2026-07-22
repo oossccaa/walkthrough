@@ -50,9 +50,23 @@ export const mockPersons: Person[] = [
     name: '志明',
     role: 'coworker',
     color: 'teal',
+    company: '同公司',
+    jobTitle: '產品經理',
     notes: '隔壁組 PM,合作案窗口',
     createdAt: '2026-03-01T10:00:00Z',
     updatedAt: '2026-07-01T10:00:00Z',
+  },
+  {
+    id: 'p4',
+    name: '陳總',
+    role: 'client',
+    color: 'amber',
+    company: '大同貿易',
+    jobTitle: '採購總監',
+    metAt: { date: '2025-06-12', place: '展場攤位', story: '對新品很有興趣,聊了半小時' },
+    notes: '年約 800 萬的大客戶,Q4 續約',
+    createdAt: '2025-06-13T10:00:00Z',
+    updatedAt: '2026-07-15T10:00:00Z',
   },
 ]
 
@@ -70,6 +84,9 @@ export const mockPreferences: Preference[] = [
   { id: 'pref11', personId: 'p2', category: 'drink', name: '美式咖啡', sentiment: 'like', note: '健身完會喝', createdAt: '2026-06-20T00:00:00Z', updatedAt: '2026-06-20T00:00:00Z' },
   { id: 'pref12', personId: 'p3', category: 'drink', name: '拿鐵(燕麥奶)', sentiment: 'love', note: '開會前幫帶一杯,事情都好談', createdAt: '2026-04-01T00:00:00Z', updatedAt: '2026-04-01T00:00:00Z' },
   { id: 'pref13', personId: 'p3', category: 'food', name: '香菜', sentiment: 'hate', note: '訂便當要注意', createdAt: '2026-05-12T00:00:00Z', updatedAt: '2026-05-12T00:00:00Z' },
+  { id: 'pref14', personId: 'p4', category: 'alcohol', name: '高粱', sentiment: 'love', note: '只喝金門 58,應酬必點', sourceContext: '去年尾牙', createdAt: '2025-12-20T00:00:00Z', updatedAt: '2025-12-20T00:00:00Z' },
+  { id: 'pref15', personId: 'p4', category: 'food', name: '牛肉', sentiment: 'hate', note: '不吃牛,訂餐廳注意', createdAt: '2025-07-01T00:00:00Z', updatedAt: '2025-07-01T00:00:00Z' },
+  { id: 'pref16', personId: 'p4', category: 'hobby', name: '高爾夫', sentiment: 'love', note: '每週六固定球敘,聊這個話匣子關不掉', createdAt: '2025-08-15T00:00:00Z', updatedAt: '2025-08-15T00:00:00Z' },
 ]
 
 export const mockPlaces: Place[] = [
@@ -86,6 +103,8 @@ export const mockRelations: RelationPerson[] = [
   { id: 'r3', personId: 'p1', type: 'friend', name: 'Peggy', role: '閨蜜', traits: '講話直,對我還在觀察期,務必打好關係' },
   { id: 'r4', personId: 'p1', type: 'ex', name: '阿哲', role: '大學學長', datingStart: '2021-02-14', datingEnd: '2023-08-01', note: '劈腿分手。地雷話題:別提他、別提登山社' },
   { id: 'r5', personId: 'p2', type: 'friend', name: '教練 Ken', role: '健身教練', traits: '常一起上課,話題人物' },
+  { id: 'r6', personId: 'p4', type: 'work', name: 'Amy', role: '特助', traits: '行程都找她排,回訊息很快,記得節日問候' },
+  { id: 'r7', personId: 'p4', type: 'work', name: '林副總', role: '決策者', traits: '最終簽核人,重數據,簡報要有 ROI', note: '別在他面前提競品 A 社' },
 ]
 
 export const mockGifts: Gift[] = [
@@ -94,6 +113,8 @@ export const mockGifts: Gift[] = [
   { id: 'g3', personId: 'p1', direction: 'wishlist', name: 'Loewe 小方包(奶油白)', sourceContext: '2026/06 逛街時盯著看很久', price: 68000 },
   { id: 'g4', personId: 'p1', direction: 'wishlist', name: '拼圖架', sourceContext: '說桌子不夠大,拼圖都拼不完', purchased: true, price: 1500 },
   { id: 'g5', personId: 'p2', direction: 'wishlist', name: '運動耳機', sourceContext: '抱怨舊的一直掉' },
+  { id: 'g6', personId: 'p4', direction: 'given', name: '中秋禮盒(茶葉)', date: '2025-09-25', occasion: '中秋', reaction: '特助回訊說總監很喜歡', price: 3200 },
+  { id: 'g7', personId: 'p4', direction: 'wishlist', name: '高爾夫手套(左手 24)', sourceContext: '球敘時抱怨舊的磨破了', price: 1800 },
 ]
 
 export const mockAnniversaries: Anniversary[] = [
@@ -103,6 +124,8 @@ export const mockAnniversaries: Anniversary[] = [
   { id: 'a4', personId: 'p1', title: '她的生日', date: '1999-03-14', recurring: true, note: '想要儀式感,提早訂餐廳' },
   { id: 'a5', personId: 'p2', title: '第一次見面', date: '2026-05-10', recurring: true },
   { id: 'a6', personId: 'p3', title: '他的生日', date: '1995-08-20', recurring: true, note: '訂會議室慶生,揪整組' },
+  { id: 'a7', personId: 'p4', title: '生日', date: '1972-10-05', recurring: true, note: '送禮走實用路線' },
+  { id: 'a8', personId: 'p4', title: '簽約週年', date: '2025-11-20', recurring: true, note: 'Q4 續約前一個月開始鋪陳' },
 ]
 
 export const mockItineraries: Itinerary[] = [
@@ -136,4 +159,6 @@ export const mockPromises: PromiseItem[] = [
   { id: 'pm2', personId: 'p1', content: '學會做她愛吃的親子丼', completed: true, completedDate: '2026-05-02', note: '她說比店裡好吃(客套也開心)' },
   { id: 'pm3', personId: 'p1', content: '拼完 2000 片的星空拼圖', completed: false },
   { id: 'pm4', personId: 'p2', content: '一起參加半馬', completed: false },
+  { id: 'pm5', personId: 'p4', content: '下次拜訪帶新品 demo 和報價單', completed: false, note: '7 月底前' },
+  { id: 'pm6', personId: 'p4', content: '介紹物流配合廠商給他', completed: true, completedDate: '2026-05-20', note: '已牽線,對方很滿意' },
 ]

@@ -4,6 +4,7 @@ export const ROLE_LABEL: Record<PersonRole, string> = {
   partner: '對象',
   friend: '朋友',
   coworker: '同事',
+  client: '客戶',
   family: '家人',
 }
 
@@ -12,10 +13,11 @@ export const ROLE_STYLE: Record<PersonRole, string> = {
   partner: 'bg-accent-100 text-accent-700',
   friend: 'bg-neutral-100 text-neutral-500',
   coworker: 'bg-neutral-100 text-neutral-500',
+  client: 'bg-neutral-100 text-neutral-500',
   family: 'bg-neutral-100 text-neutral-500',
 }
 
-export const ROLE_ORDER: PersonRole[] = ['partner', 'friend', 'coworker', 'family']
+export const ROLE_ORDER: PersonRole[] = ['partner', 'friend', 'coworker', 'client', 'family']
 
 // 各身份可記錄的模組(對象最完整)
 export type ModuleKey = 'quick' | 'preferences' | 'places' | 'relations' | 'gifts' | 'anniversaries' | 'promises'
@@ -25,13 +27,15 @@ export const ROLE_MODULES: Record<PersonRole, ModuleKey[]> = {
   friend: ['quick', 'preferences', 'gifts', 'anniversaries'],
   family: ['quick', 'preferences', 'gifts', 'anniversaries'],
   coworker: ['quick', 'preferences', 'anniversaries'],
+  client: ['quick', 'preferences', 'relations', 'gifts', 'anniversaries', 'promises'],
 }
 
 export const ROLE_HINT: Record<PersonRole, string> = {
   partner: '最完整:喜好、地點、人物、禮物、紀念日、約定',
-  friend: '喜好、禮物、紀念日',
-  family: '喜好、禮物、紀念日',
-  coworker: '喜好、紀念日',
+  friend: '喜好、禮物、重要日子',
+  family: '喜好、禮物、重要日子',
+  coworker: '喜好、重要日子,可記公司職稱',
+  client: '業務向:喜好、關鍵人物、送禮、重要日子、承諾',
 }
 
 export const CATEGORY_LABEL: Record<PreferenceCategory, string> = {
@@ -75,17 +79,26 @@ export const PLACE_TYPE_LABEL: Record<PlaceType, string> = {
 }
 
 export const RELATION_TYPE_LABEL: Record<RelationType, string> = {
+  work: '工作關係',
   family: '家人',
   friend: '朋友',
   ex: '前任',
 }
 
-// 「第一次___」快速範本
-export const ANNIVERSARY_TEMPLATES = [
-  '第一次見面',
-  '第一次約會',
-  '第一次牽手',
-  '第一次接吻',
-  '在一起',
-  '第一次旅行',
-]
+// 人物 tab 依身份顯示的關係區塊(同時決定表單可選的類型)
+export const ROLE_RELATION_TYPES: Record<PersonRole, RelationType[]> = {
+  partner: ['family', 'friend', 'ex'],
+  client: ['work', 'family', 'friend'],
+  friend: ['family', 'friend'],
+  family: ['family', 'friend'],
+  coworker: ['work'],
+}
+
+// 紀念日快速範本(依身份)
+export const ROLE_ANNIVERSARY_TEMPLATES: Record<PersonRole, string[]> = {
+  partner: ['第一次見面', '第一次約會', '第一次牽手', '第一次接吻', '在一起', '第一次旅行'],
+  client: ['生日', '簽約週年', '公司創立日', '初次拜訪'],
+  friend: ['生日', '認識紀念日'],
+  family: ['生日', '認識紀念日'],
+  coworker: ['生日', '認識紀念日'],
+}

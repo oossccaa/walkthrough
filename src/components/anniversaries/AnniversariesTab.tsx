@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { SectionCard, EmptyState, Chip, AddButton, BottomSheet, Field, inputCls, PrimaryButton, DeleteButton } from '../ui'
-import { ANNIVERSARY_TEMPLATES } from '../../labels'
+import { ROLE_ANNIVERSARY_TEMPLATES } from '../../labels'
 import { fmt, daysSince, daysUntilNext } from '../../utils/dates'
 import { anniversariesRepo } from '../../db/repo'
-import type { Anniversary } from '../../types'
+import type { Anniversary, PersonRole } from '../../types'
 
-export function AnniversariesTab({ personId, items }: { personId: string; items: Anniversary[] }) {
+export function AnniversariesTab({ personId, role, items }: { personId: string; role: PersonRole; items: Anniversary[] }) {
   const [editing, setEditing] = useState<Anniversary | 'new' | null>(null)
   const [templateTitle, setTemplateTitle] = useState('')
 
@@ -15,17 +15,17 @@ export function AnniversariesTab({ personId, items }: { personId: string; items:
 
   return (
     <div className="space-y-3">
-      <SectionCard title="快速新增" subtitle="點一下套用「第一次___」範本">
+      <SectionCard title="快速新增" subtitle="點一下套用範本">
         <div className="flex flex-wrap gap-2">
-          {ANNIVERSARY_TEMPLATES.map(t => (
+          {ROLE_ANNIVERSARY_TEMPLATES[role].map(t => (
             <Chip key={t} onClick={() => { setTemplateTitle(t); setEditing('new') }}>{t}</Chip>
           ))}
         </div>
       </SectionCard>
 
-      <SectionCard title="紀念日">
+      <SectionCard title={role === 'partner' ? '紀念日' : '重要日子'}>
         {sorted.length === 0 ? (
-          <EmptyState text="還沒有紀念日" />
+          <EmptyState text="還沒有紀錄" />
         ) : (
           <ul className="divide-y divide-neutral-100">
             {sorted.map(a => {
@@ -61,11 +61,12 @@ export function AnniversariesTab({ personId, items }: { personId: string; items:
         )}
       </SectionCard>
 
-      <AddButton label="新增紀念日" onClick={() => { setTemplateTitle(''); setEditing('new') }} />
+      <AddButton label={role === 'partner' ? '新增紀念日' : '新增重要日子'} onClick={() => { setTemplateTitle(''); setEditing('new') }} />
 
       {editing && (
         <AnniversarySheet
           personId={personId}
+          word={role === 'partner' ? '紀念日' : '重要日子'}
           existing={editing === 'new' ? null : editing}
           defaultTitle={templateTitle}
           onClose={() => { setEditing(null); setTemplateTitle('') }}
@@ -75,8 +76,9 @@ export function AnniversariesTab({ personId, items }: { personId: string; items:
   )
 }
 
-function AnniversarySheet({ personId, existing, defaultTitle, onClose }: {
+function AnniversarySheet({ personId, word, existing, defaultTitle, onClose }: {
   personId: string
+  word: string
   existing: Anniversary | null
   defaultTitle: string
   onClose: () => void
@@ -95,10 +97,10 @@ function AnniversarySheet({ personId, existing, defaultTitle, onClose }: {
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={existing ? '編輯紀念日' : '新增紀念日'}>
+    <BottomSheet open onClose={onClose} title={existing ? `編輯${word}` : `新增${word}`}>
       <div className="space-y-4">
         <Field label="名稱">
-          <input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} placeholder="例:第一次見面" />
+          <input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} placeholder={word === '紀念日' ? '例:第一次見面' : '例:生日、簽約週年'} />
         </Field>
         <Field label="日期">
           <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />

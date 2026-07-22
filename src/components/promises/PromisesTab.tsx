@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { SectionCard, EmptyState, AddButton, BottomSheet, Field, inputCls, PrimaryButton, DeleteButton } from '../ui'
 import { fmt } from '../../utils/dates'
 import { promisesRepo, today } from '../../db/repo'
-import type { PromiseItem } from '../../types'
+import type { PromiseItem, PersonRole } from '../../types'
 
-export function PromisesTab({ personId, items }: { personId: string; items: PromiseItem[] }) {
+export function PromisesTab({ personId, role, items }: { personId: string; role: PersonRole; items: PromiseItem[] }) {
   const [editing, setEditing] = useState<PromiseItem | 'new' | null>(null)
+  const isPartner = role === 'partner'
+  const word = isPartner ? '約定' : '承諾'
   const todo = items.filter(p => !p.completed)
   const done = items.filter(p => p.completed)
 
@@ -16,9 +18,12 @@ export function PromisesTab({ personId, items }: { personId: string; items: Prom
 
   return (
     <div className="space-y-3">
-      <SectionCard title="我們的約定" subtitle="以後要一起做的事">
+      <SectionCard
+        title={isPartner ? '我們的約定' : '承諾事項'}
+        subtitle={isPartner ? '以後要一起做的事' : '答應對方要做的事'}
+      >
         {todo.length === 0 ? (
-          <EmptyState text="還沒有約定" />
+          <EmptyState text={`還沒有${word}`} />
         ) : (
           <ul className="divide-y divide-neutral-100">
             {todo.map(p => (
@@ -38,9 +43,9 @@ export function PromisesTab({ personId, items }: { personId: string; items: Prom
         )}
       </SectionCard>
 
-      <SectionCard title="已完成的回憶">
+      <SectionCard title={isPartner ? '已完成的回憶' : '已完成'}>
         {done.length === 0 ? (
-          <EmptyState text="完成的約定會收在這裡" />
+          <EmptyState text={`完成的${word}會收在這裡`} />
         ) : (
           <ul className="divide-y divide-neutral-100">
             {done.map(p => (
@@ -65,17 +70,25 @@ export function PromisesTab({ personId, items }: { personId: string; items: Prom
         )}
       </SectionCard>
 
-      <AddButton label="新增約定" onClick={() => setEditing('new')} />
+      <AddButton label={`新增${word}`} onClick={() => setEditing('new')} />
 
       {editing && (
-        <PromiseSheet personId={personId} existing={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+        <PromiseSheet
+          personId={personId}
+          word={word}
+          isPartner={isPartner}
+          existing={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+        />
       )}
     </div>
   )
 }
 
-function PromiseSheet({ personId, existing, onClose }: {
+function PromiseSheet({ personId, word, isPartner, existing, onClose }: {
   personId: string
+  word: string
+  isPartner: boolean
   existing: PromiseItem | null
   onClose: () => void
 }) {
@@ -91,10 +104,15 @@ function PromiseSheet({ personId, existing, onClose }: {
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={existing ? '編輯約定' : '新增約定'}>
+    <BottomSheet open onClose={onClose} title={existing ? `編輯${word}` : `新增${word}`}>
       <div className="space-y-4">
-        <Field label="約定內容">
-          <input className={inputCls} value={content} onChange={e => setContent(e.target.value)} placeholder="例:一起去日本跨年" />
+        <Field label={`${word}內容`}>
+          <input
+            className={inputCls}
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            placeholder={isPartner ? '例:一起去日本跨年' : '例:下次拜訪帶新品報價'}
+          />
         </Field>
         <Field label="備註(選填)">
           <input className={inputCls} value={note} onChange={e => setNote(e.target.value)} />

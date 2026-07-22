@@ -3,18 +3,21 @@ import { SENTIMENT_LABEL, SENTIMENT_STYLE, RELATION_TYPE_LABEL, ROLE_MODULES } f
 import { daysUntilNext, fmt } from '../../utils/dates'
 import { today } from '../../db/repo'
 import { ItineraryTimeline } from '../itinerary/ItineraryFab'
-import type { Preference, Gift, Anniversary, RelationPerson, Itinerary, PersonRole } from '../../types'
+import type { Preference, Gift, Anniversary, RelationPerson, Itinerary, PersonRole, PromiseItem } from '../../types'
 
 /** 見面前速查卡:一頁看完下次行程、地雷、最新喜好、想要的禮物、紀念日、重要人物 */
-export function QuickCard({ role, preferences, gifts, anniversaries, relations, itineraries }: {
+export function QuickCard({ role, preferences, gifts, anniversaries, relations, itineraries, promises }: {
   role: PersonRole
   preferences: Preference[]
   gifts: Gift[]
   anniversaries: Anniversary[]
   relations: RelationPerson[]
   itineraries: Itinerary[]
+  promises: PromiseItem[]
 }) {
   const modules = ROLE_MODULES[role]
+  const openPromises = promises.filter(p => !p.completed).slice(0, 3)
+  const isPartner = role === 'partner'
   const nextItinerary = [...itineraries]
     .filter(i => i.date >= today())
     .sort((a, b) => a.date.localeCompare(b.date))[0]
@@ -37,6 +40,22 @@ export function QuickCard({ role, preferences, gifts, anniversaries, relations, 
       {nextItinerary && (
         <SectionCard title="下一次行程" subtitle={fmt(nextItinerary.date)}>
           <ItineraryTimeline stops={nextItinerary.stops} />
+        </SectionCard>
+      )}
+
+      {modules.includes('promises') && openPromises.length > 0 && (
+        <SectionCard title={isPartner ? '還沒兌現的約定' : '未完成的承諾'} subtitle="別忘記答應過的事">
+          <ul className="space-y-2">
+            {openPromises.map(p => (
+              <li key={p.id} className="flex items-center gap-3">
+                <span className="inline-block h-4 w-4 shrink-0 rounded border border-neutral-300" />
+                <div className="min-w-0">
+                  <span className="font-medium">{p.content}</span>
+                  {p.note && <p className="text-xs text-neutral-500">{p.note}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
         </SectionCard>
       )}
 
@@ -72,9 +91,9 @@ export function QuickCard({ role, preferences, gifts, anniversaries, relations, 
       </SectionCard>
 
       {modules.includes('gifts') && (
-        <SectionCard title="提過想要的">
+        <SectionCard title={isPartner ? '提過想要的' : '送禮靈感'}>
           {wishlist.length === 0 ? (
-            <EmptyState text="還沒記錄想要的東西" />
+            <EmptyState text={isPartner ? '還沒記錄想要的東西' : '還沒記錄送禮靈感'} />
           ) : (
             <ul className="space-y-2">
               {wishlist.map(g => (
@@ -88,7 +107,7 @@ export function QuickCard({ role, preferences, gifts, anniversaries, relations, 
         </SectionCard>
       )}
 
-      <SectionCard title="紀念日倒數">
+      <SectionCard title={isPartner ? '紀念日倒數' : '重要日子倒數'}>
         <ul className="space-y-2">
           {upcoming.map(a => {
             const d = daysUntilNext(a.date)

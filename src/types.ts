@@ -1,7 +1,7 @@
 // 資料模型;日期一律存 ISO 字串(yyyy-MM-dd 或完整 ISO)
 
 // 身份:決定這個人可以記錄哪些模組(對象最完整)
-export type PersonRole = 'partner' | 'friend' | 'coworker' | 'family'
+export type PersonRole = 'partner' | 'friend' | 'coworker' | 'family' | 'client'
 
 export interface Person {
   id: string
@@ -10,6 +10,8 @@ export interface Person {
   birthday?: string
   metAt?: { date?: string; place?: string; story?: string }
   role: PersonRole
+  company?: string  // 客戶/同事用
+  jobTitle?: string // 客戶/同事用
   color?: string // 每個人可有自己的主題色 key
   avatar?: string
   notes?: string
@@ -49,7 +51,7 @@ export interface Place {
   note?: string
 }
 
-export type RelationType = 'family' | 'friend' | 'ex'
+export type RelationType = 'family' | 'friend' | 'ex' | 'work'
 
 export interface RelationPerson {
   id: string

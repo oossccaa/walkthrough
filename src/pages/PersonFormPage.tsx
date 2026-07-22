@@ -36,6 +36,8 @@ function PersonForm({ existing }: { existing?: Person }) {
   )
   const [name, setName] = useState(existing?.name ?? '')
   const [nickname, setNickname] = useState(existing?.nickname ?? '')
+  const [company, setCompany] = useState(existing?.company ?? '')
+  const [jobTitle, setJobTitle] = useState(existing?.jobTitle ?? '')
   const [birthday, setBirthday] = useState(existing?.birthday ?? '')
   const [metDate, setMetDate] = useState(existing?.metAt?.date ?? '')
   const [metPlace, setMetPlace] = useState(existing?.metAt?.place ?? '')
@@ -70,10 +72,13 @@ function PersonForm({ existing }: { existing?: Person }) {
     const metAt = (metDate || metPlace || metStory)
       ? { date: metDate || undefined, place: metPlace.trim() || undefined, story: metStory.trim() || undefined }
       : undefined
+    const showWork = role === 'client' || role === 'coworker'
     const data = {
       name: name.trim(),
       nickname: nickname.trim() || undefined,
       role,
+      company: showWork ? company.trim() || undefined : undefined,
+      jobTitle: showWork ? jobTitle.trim() || undefined : undefined,
       birthday: birthday || undefined,
       metAt,
       notes: notes.trim() || undefined,
@@ -111,6 +116,16 @@ function PersonForm({ existing }: { existing?: Person }) {
           <Field label="暱稱(選填)">
             <input className={inputCls} value={nickname} onChange={e => setNickname(e.target.value)} />
           </Field>
+          {(role === 'client' || role === 'coworker') && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="公司(選填)">
+                <input className={inputCls} value={company} onChange={e => setCompany(e.target.value)} placeholder="例:大同貿易" />
+              </Field>
+              <Field label="職稱(選填)">
+                <input className={inputCls} value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="例:採購總監" />
+              </Field>
+            </div>
+          )}
           <Field label="生日(選填)">
             <input type="date" className={inputCls} value={birthday} onChange={e => setBirthday(e.target.value)} />
           </Field>
