@@ -107,7 +107,7 @@ export function PersonPage() {
           </div>
         </div>
         {person.notes && (
-          <p className="mt-3 rounded-xl bg-white border border-neutral-200/60 px-3 py-2 text-xs text-neutral-600">
+          <p className="mt-3 rounded-xl bg-paper border border-neutral-200/60 px-3 py-2 text-xs text-neutral-600">
             {person.notes}
           </p>
         )}
@@ -122,7 +122,7 @@ export function PersonPage() {
               key={m}
               onClick={() => setTab(m)}
               className={`shrink-0 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                activeTab === m ? 'bg-accent-500 text-white' : 'bg-white text-neutral-500 border border-neutral-200'
+                activeTab === m ? 'bg-accent-500 text-white' : 'bg-paper text-neutral-500 border border-neutral-200'
               }`}
             >
               {tabLabel(m, person.role === 'partner')}

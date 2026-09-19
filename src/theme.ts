@@ -10,6 +10,7 @@ const S = (
 ): Shades => ({ 50: s50, 100: s100, 200: s200, 300: s300, 400: s400, 500: s500, 600: s600, 700: s700 })
 
 export const THEMES = {
+  sage:      { label: '鼠尾草', shades: S('#F0F5F0', '#E3EDE3', '#CBDECD', '#A9C4AE', '#6E9B7E', '#4F8465', '#3E7355', '#33604A') },
   hydrangea: { label: '藍繡球', shades: S('#f4f7fb', '#e8eef7', '#cfdcee', '#aac2e0', '#84a4d0', '#6489c2', '#4d6ea8', '#415b8a') },
   sky:       { label: '天空藍', shades: S('#f0f9ff', '#e0f2fe', '#bae6fd', '#7dd3fc', '#38bdf8', '#0ea5e9', '#0284c7', '#0369a1') },
   blue:      { label: '海洋藍', shades: S('#eff6ff', '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8') },
@@ -33,7 +34,7 @@ export const THEMES = {
 } as const
 
 export type ThemeKey = keyof typeof THEMES
-export const DEFAULT_THEME: ThemeKey = 'hydrangea'
+export const DEFAULT_THEME: ThemeKey = 'sage'
 export const THEME_KEYS = Object.keys(THEMES) as ThemeKey[]
 
 export function isThemeKey(v: unknown): v is ThemeKey {

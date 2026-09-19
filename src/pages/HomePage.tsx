@@ -23,7 +23,7 @@ export function HomePage() {
       </header>
 
       {persons.length === 0 && (
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-neutral-200/60 text-center">
+        <div className="rounded-2xl bg-paper p-6 shadow-sm border border-neutral-200/60 text-center">
           <p className="font-bold text-neutral-700">還沒有任何人</p>
           <p className="mt-1 text-xs text-neutral-400">新增第一個人,選好身份就能開始記錄。</p>
           <button onClick={loadDemo} className="mt-4 text-xs text-neutral-400 underline">
@@ -42,7 +42,7 @@ export function HomePage() {
               <Link
                 key={p.id}
                 to={`/person/${p.id}`}
-                className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm border border-neutral-200/60 active:bg-accent-50"
+                className="flex items-center gap-4 rounded-2xl bg-paper p-4 shadow-sm border border-neutral-200/60 active:bg-accent-50"
               >
                 <div
                   className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-400 text-lg font-black text-white"

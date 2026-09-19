@@ -20,13 +20,13 @@ export function ItineraryFab() {
           <>
             <button
               onClick={() => { setMode('view'); setMenuOpen(false) }}
-              className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-lg border border-neutral-100"
+              className="rounded-xl bg-paper px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-lg border border-neutral-100"
             >
               觀看行程
             </button>
             <button
               onClick={() => { setMode('add'); setMenuOpen(false) }}
-              className="rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-lg border border-neutral-100"
+              className="rounded-xl bg-paper px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-lg border border-neutral-100"
             >
               新增行程
             </button>
@@ -81,7 +81,7 @@ function ViewItinerarySheet({ open, onClose }: { open: boolean; onClose: () => v
 
   const renderList = (list: Itinerary[]) =>
     list.map(it => (
-      <div key={it.id} className="rounded-2xl border border-neutral-200/60 bg-white p-3">
+      <div key={it.id} className="rounded-2xl border border-neutral-200/60 bg-paper p-3">
         <div className="mb-2 flex items-center gap-2">
           <span className="font-bold">{fmt(it.date)}</span>
           {personName(it.personId) && (

@@ -44,13 +44,13 @@ export function SettingsPage() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => { if (confirm('載入示範資料會覆蓋目前所有資料,確定?')) loadDemo() }}
-            className="rounded-xl border border-neutral-200 bg-white py-3 text-sm font-bold text-neutral-700 active:bg-neutral-50"
+            className="rounded-xl border border-neutral-200 bg-paper py-3 text-sm font-bold text-neutral-700 active:bg-neutral-50"
           >
             載入示範資料
           </button>
           <button
             onClick={() => { if (confirm('確定要清空所有資料與設定?此動作無法復原。')) resetAll() }}
-            className="rounded-xl border border-red-200 bg-white py-3 text-sm font-bold text-red-600 active:bg-red-50"
+            className="rounded-xl border border-danger-line bg-paper py-3 text-sm font-bold text-danger active:bg-danger-soft"
           >
             清空重來
           </button>
@@ -123,10 +123,10 @@ function LocalBackupSection() {
   return (
     <SectionCard title="本機備份" subtitle="所有資料只存在這台裝置的瀏覽器裡">
       <div className="grid grid-cols-2 gap-3">
-        <button onClick={doExport} className="rounded-xl border border-neutral-200 bg-white py-3 text-sm font-bold text-neutral-700 active:bg-neutral-50">
+        <button onClick={doExport} className="rounded-xl border border-neutral-200 bg-paper py-3 text-sm font-bold text-neutral-700 active:bg-neutral-50">
           匯出 JSON
         </button>
-        <button onClick={() => fileRef.current?.click()} className="rounded-xl border border-neutral-200 bg-white py-3 text-sm font-bold text-neutral-700 active:bg-neutral-50">
+        <button onClick={() => fileRef.current?.click()} className="rounded-xl border border-neutral-200 bg-paper py-3 text-sm font-bold text-neutral-700 active:bg-neutral-50">
           匯入 JSON
         </button>
       </div>
@@ -259,7 +259,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle?: () => void }) {
       role="switch"
       aria-checked={on}
     >
-      <div className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-5' : ''}`} />
+      <div className={`h-5 w-5 rounded-full bg-paper shadow transition-transform ${on ? 'translate-x-5' : ''}`} />
     </button>
   )
 }

@@ -62,14 +62,14 @@ export const SENTIMENT_STYLE: Record<Sentiment, string> = {
   love: 'bg-accent-600 text-white border-accent-600',
   like: 'bg-accent-100 text-accent-700 border-accent-200',
   dislike: 'bg-neutral-100 text-neutral-500 border-neutral-200',
-  hate: 'bg-red-600 text-white border-red-600',
+  hate: 'bg-danger text-white border-danger',
 }
 
 export const SENTIMENT_DOT: Record<Sentiment, string> = {
   love: 'bg-accent-600',
   like: 'bg-accent-300',
   dislike: 'bg-neutral-300',
-  hate: 'bg-red-600',
+  hate: 'bg-danger',
 }
 
 export const PLACE_TYPE_LABEL: Record<PlaceType, string> = {

@@ -56,7 +56,7 @@ function PersonForm({ existing }: { existing?: Person }) {
             <button
               key={r}
               onClick={() => setRole(r)}
-              className="w-full rounded-2xl bg-white p-4 text-left shadow-sm border border-neutral-200/60 active:bg-accent-50"
+              className="w-full rounded-2xl bg-paper p-4 text-left shadow-sm border border-neutral-200/60 active:bg-accent-50"
             >
               <p className="font-bold">{ROLE_LABEL[r]}</p>
               <p className="mt-0.5 text-xs text-neutral-400">{ROLE_HINT[r]}</p>

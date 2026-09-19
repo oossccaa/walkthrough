@@ -43,7 +43,7 @@ export function RelationsTab({ personId, role, items }: {
                         <p className="text-xs text-neutral-400">{fmt(r.datingStart)} ~ {fmt(r.datingEnd)}</p>
                       )}
                       {r.traits && <p className="mt-0.5 text-xs text-neutral-500">{r.traits}</p>}
-                      {r.note && <p className="mt-0.5 text-xs font-medium text-red-600">{r.note}</p>}
+                      {r.note && <p className="mt-0.5 text-xs font-medium text-danger">{r.note}</p>}
                     </button>
                   </li>
                 ))}

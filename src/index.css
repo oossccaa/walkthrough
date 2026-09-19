@@ -1,17 +1,41 @@
 @import "tailwindcss";
 
-/* 主色:藍繡球(soft periwinkle blue) */
+/* 設計 token(依 Tiedto 改版設計稿):
+   - 暖橄欖中性色階取代預設 neutral
+   - paper 紙白卡片 / cream 米底
+   - danger 磚紅(地雷/刪除)
+   - accent-* 為可切換主色(預設鼠尾草綠),由 theme.ts 在 runtime 覆寫 */
 @theme {
-  --color-accent-50: #f4f7fb;
-  --color-accent-100: #e8eef7;
-  --color-accent-200: #cfdcee;
-  --color-accent-300: #aac2e0;
-  --color-accent-400: #84a4d0;
-  --color-accent-500: #6489c2;
-  --color-accent-600: #4d6ea8;
-  --color-accent-700: #415b8a;
-  --color-accent-800: #394e73;
-  --color-accent-900: #32425f;
+  --font-sans: 'Noto Sans TC', -apple-system, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  --font-serif: 'Noto Serif TC', 'PingFang TC', serif;
+
+  --color-neutral-50: #F7F8F3;
+  --color-neutral-100: #ECEFE3;
+  --color-neutral-200: #E4E7DA;
+  --color-neutral-300: #CDD3C2;
+  --color-neutral-400: #A3AB96;
+  --color-neutral-500: #7F8873;
+  --color-neutral-600: #6E7761;
+  --color-neutral-700: #5B644F;
+  --color-neutral-800: #3A4131;
+  --color-neutral-900: #2C3226;
+
+  --color-paper: #FFFFFC;
+  --color-cream: #F5F6F0;
+
+  --color-danger: #B4432E;
+  --color-danger-ink: #A6472B;
+  --color-danger-soft: #FBEFE9;
+  --color-danger-line: #EDCFC0;
+
+  --color-accent-50: #F0F5F0;
+  --color-accent-100: #E3EDE3;
+  --color-accent-200: #CBDECD;
+  --color-accent-300: #A9C4AE;
+  --color-accent-400: #6E9B7E;
+  --color-accent-500: #4F8465;
+  --color-accent-600: #3E7355;
+  --color-accent-700: #33604A;
 }
 
 html {
@@ -19,6 +43,11 @@ html {
 }
 
 body {
-  @apply bg-accent-50 text-neutral-800 antialiased;
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  @apply bg-cream text-neutral-800 antialiased;
+  font-family: var(--font-sans);
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }

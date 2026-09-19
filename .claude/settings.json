@@ -9,7 +9,8 @@
       "Bash(gh run *)",
       "Bash(gh api *)",
       "Bash(sed -i '' 's/RosterNote/Tiedto/g' vite.config.ts index.html src/pages/HomePage.tsx)",
-      "Bash(sed -i '' 's/^# 戀愛攻略筆記/# Tiedto/' README.md)"
+      "Bash(sed -i '' 's/^# 戀愛攻略筆記/# Tiedto/' README.md)",
+      "Bash(xargs sed -i '' -e s/bg-white/bg-paper/g -e s/border-red-200/border-danger-line/g -e 's/bg-red-50\\\\b/bg-danger-soft/g' -e s/active:bg-red-50/active:bg-danger-soft/g -e s/text-red-600/text-danger/g -e s/bg-red-600/bg-danger/g -e s/border-red-600/border-danger/g)"
     ]
   }
 }
