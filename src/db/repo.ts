@@ -1,10 +1,12 @@
 import type { Table } from 'dexie'
+import { format } from 'date-fns'
 import { db, ALL_TABLES } from './db'
 import type { Person, PersonRole } from '../types'
 
 export const uid = () => crypto.randomUUID()
 export const nowIso = () => new Date().toISOString()
-export const today = () => nowIso().slice(0, 10)
+// 用本地日期:toISOString() 是 UTC,台灣 08:00 前會變成昨天
+export const today = () => format(new Date(), 'yyyy-MM-dd')
 
 function crud<T extends { id: string }>(table: () => Table<T, string>) {
   return {
@@ -14,7 +16,12 @@ function crud<T extends { id: string }>(table: () => Table<T, string>) {
       return full
     },
     update: (id: string, patch: Partial<T>) => table().update(id, patch as never),
-    remove: (id: string) => table().delete(id),
+    /** 刪除並回傳「復原」函式(給 toast 的復原按鈕用) */
+    async remove(id: string): Promise<() => Promise<void>> {
+      const item = await table().get(id)
+      await table().delete(id)
+      return async () => { if (item) await table().put(item) }
+    },
   }
 }
 
@@ -44,17 +51,28 @@ export async function updatePerson(id: string, patch: Partial<Person>) {
   await db.persons.update(id, { ...patch, updatedAt: nowIso() })
 }
 
-export async function deletePerson(id: string) {
-  await db.transaction('rw', ALL_TABLES.map(n => db.table(n)), async () => {
-    await db.persons.delete(id)
-    await db.preferences.where('personId').equals(id).delete()
-    await db.places.where('personId').equals(id).delete()
-    await db.relations.where('personId').equals(id).delete()
-    await db.gifts.where('personId').equals(id).delete()
-    await db.anniversaries.where('personId').equals(id).delete()
-    await db.promises.where('personId').equals(id).delete()
-    await db.itineraries.where('personId').equals(id).delete()
+/** 刪除人物並連動清掉所有子資料;回傳「復原」函式,可整包還原 */
+export async function deletePerson(id: string): Promise<() => Promise<void>> {
+  const tables = ALL_TABLES.map(n => db.table(n))
+  const snapshot: Partial<Record<(typeof ALL_TABLES)[number], unknown[]>> = {}
+  await db.transaction('rw', tables, async () => {
+    for (const name of ALL_TABLES) {
+      const t = db.table(name)
+      if (name === 'persons') {
+        snapshot[name] = [await t.get(id)].filter(Boolean)
+        await t.delete(id)
+      } else {
+        const coll = t.where('personId').equals(id)
+        snapshot[name] = await coll.toArray()
+        await coll.delete()
+      }
+    }
   })
+  return async () => {
+    await db.transaction('rw', tables, async () => {
+      for (const name of ALL_TABLES) await db.table(name).bulkPut((snapshot[name] ?? []) as never[])
+    })
+  }
 }
 
 // ---- 匯出 / 匯入(整份覆蓋) ----

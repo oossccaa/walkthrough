@@ -33,25 +33,50 @@ export async function getAccessToken(clientId: string): Promise<string> {
       scope: SCOPE,
       callback: (resp: { access_token?: string; expires_in?: number; error?: string }) => {
         if (resp.error || !resp.access_token) {
-          reject(new Error(`Google 授權失敗:${resp.error ?? '未取得權杖'}`))
+          reject(new Error(
+            resp.error === 'access_denied'
+              ? '你沒有同意 Google 授權,所以無法備份 / 還原。要使用請再按一次並允許存取。'
+              : 'Google 授權失敗,請確認 Client ID 是否正確(可點「如何設定?」對照步驟)。',
+          ))
           return
         }
         cachedToken = { token: resp.access_token, expiresAt: Date.now() + (resp.expires_in ?? 3600) * 1000 }
         resolve(resp.access_token)
       },
-      error_callback: (err: { message?: string }) =>
-        reject(new Error(`Google 授權失敗:${err?.message ?? '視窗被關閉'}`)),
+      error_callback: (err: { type?: string }) =>
+        reject(new Error(
+          err?.type === 'popup_failed_to_open'
+            ? '登入視窗被瀏覽器擋住了,請允許此網站開啟彈出視窗後再試一次。'
+            : '登入視窗被關閉,這次沒有備份 / 還原。',
+        )),
     })
     client.requestAccessToken()
   })
 }
 
+// 把 HTTP 狀態翻成使用者看得懂、知道下一步怎麼做的訊息
+function driveErrorMessage(status: number): string {
+  if (status === 401) return 'Google 授權已過期,請再按一次並重新登入。'
+  if (status === 403) return 'Google Drive 拒絕存取:請確認已在 Google Cloud 啟用 Drive API,且你的帳號在測試使用者名單中。'
+  if (status === 404) return 'Drive 上找不到備份檔,可能已被刪除。'
+  if (status === 429 || status >= 500) return 'Google Drive 暫時無法使用,請稍後再試。'
+  return `Google Drive 發生錯誤(代碼 ${status}),請稍後再試。`
+}
+
 async function driveFetch(token: string, url: string, init?: RequestInit) {
-  const res = await fetch(url, {
-    ...init,
-    headers: { Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
-  })
-  if (!res.ok) throw new Error(`Drive API 錯誤(${res.status}):${(await res.text()).slice(0, 200)}`)
+  let res: Response
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: { Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
+    })
+  } catch {
+    throw new Error('網路連線失敗,請確認網路後再試一次。')
+  }
+  if (!res.ok) {
+    if (res.status === 401) cachedToken = null
+    throw new Error(driveErrorMessage(res.status))
+  }
   return res
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SectionCard, EmptyState, AddButton, BottomSheet, Chip, Field, inputCls, PrimaryButton, DeleteButton } from '../ui'
+import { SectionCard, EmptyState, AddButton, BottomSheet, Chip, Field, inputCls, PrimaryButton, DeleteButton, useDirty } from '../ui'
+import { useToast } from '../toast'
 import { RELATION_TYPE_LABEL, ROLE_RELATION_TYPES } from '../../labels'
 import { fmt, durationLabel } from '../../utils/dates'
 import { relationsRepo } from '../../db/repo'
@@ -40,7 +41,7 @@ export function RelationsTab({ personId, role, items }: {
                         )}
                       </div>
                       {type === 'ex' && r.datingStart && r.datingEnd && (
-                        <p className="text-xs text-neutral-400">{fmt(r.datingStart)} ~ {fmt(r.datingEnd)}</p>
+                        <p className="text-xs text-neutral-500">{fmt(r.datingStart)} ~ {fmt(r.datingEnd)}</p>
                       )}
                       {r.traits && <p className="mt-0.5 text-xs text-neutral-500">{r.traits}</p>}
                       {r.note && <p className="mt-0.5 text-xs font-medium text-danger">{r.note}</p>}
@@ -81,9 +82,13 @@ function RelationSheet({ personId, allowedTypes, existing, onClose }: {
   const [datingEnd, setDatingEnd] = useState(existing?.datingEnd ?? '')
 
   const isWork = type === 'work'
+  const [tried, setTried] = useState(false)
+  const dirty = useDirty([type, name, role, traits, note, datingStart, datingEnd])
+  const toast = useToast()
+  const datesInvalid = type === 'ex' && !!datingStart && !!datingEnd && datingEnd < datingStart
 
   const submit = async () => {
-    if (!name.trim()) return
+    if (!name.trim() || datesInvalid) return setTried(true)
     const patch = {
       type,
       name: name.trim(),
@@ -95,11 +100,12 @@ function RelationSheet({ personId, allowedTypes, existing, onClose }: {
     }
     if (existing) await relationsRepo.update(existing.id, patch)
     else await relationsRepo.add({ ...patch, personId })
+    toast(existing ? '已儲存' : '已新增')
     onClose()
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={existing ? '編輯人物' : '新增人物'}>
+    <BottomSheet open onClose={onClose} dirty={dirty} title={existing ? '編輯人物' : '新增人物'}>
       <div className="space-y-4">
         <Field label="關係">
           <div className="flex flex-wrap gap-2">
@@ -108,7 +114,7 @@ function RelationSheet({ personId, allowedTypes, existing, onClose }: {
             ))}
           </div>
         </Field>
-        <Field label="名字">
+        <Field label="名字" required error={tried && !name.trim() ? '請填寫名字' : undefined}>
           <input className={inputCls} value={name} onChange={e => setName(e.target.value)} placeholder={isWork ? '例:Amy' : '例:Peggy'} />
         </Field>
         <Field label="身分(選填)">
@@ -124,7 +130,7 @@ function RelationSheet({ personId, allowedTypes, existing, onClose }: {
             <Field label="交往開始">
               <input type="date" className={inputCls} value={datingStart} onChange={e => setDatingStart(e.target.value)} />
             </Field>
-            <Field label="交往結束">
+            <Field label="交往結束" error={datesInvalid ? '結束日期早於開始日期' : undefined}>
               <input type="date" className={inputCls} value={datingEnd} onChange={e => setDatingEnd(e.target.value)} />
             </Field>
           </div>
@@ -147,7 +153,11 @@ function RelationSheet({ personId, allowedTypes, existing, onClose }: {
         </Field>
         <PrimaryButton onClick={submit}>{existing ? '儲存' : '新增'}</PrimaryButton>
         {existing && (
-          <DeleteButton onConfirm={async () => { await relationsRepo.remove(existing.id); onClose() }} />
+          <DeleteButton onDelete={async () => {
+            const undo = await relationsRepo.remove(existing.id)
+            onClose()
+            toast('已刪除', { action: { label: '復原', onClick: undo } })
+          }} />
         )}
       </div>
     </BottomSheet>

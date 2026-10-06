@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SectionCard, EmptyState, Chip, AddButton, BottomSheet, Field, inputCls, PrimaryButton, DeleteButton } from '../ui'
+import { SectionCard, EmptyState, Chip, AddButton, BottomSheet, Field, inputCls, PrimaryButton, DeleteButton, useDirty } from '../ui'
+import { useToast } from '../toast'
 import { ROLE_ANNIVERSARY_TEMPLATES } from '../../labels'
 import { fmt, daysSince, daysUntilNext } from '../../utils/dates'
 import { anniversariesRepo } from '../../db/repo'
@@ -41,7 +42,7 @@ export function AnniversariesTab({ personId, role, items }: { personId: string; 
                           <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] text-neutral-500">每年</span>
                         )}
                       </div>
-                      <p className="text-xs text-neutral-400">
+                      <p className="text-xs text-neutral-500">
                         {fmt(a.date)}
                         {passed > 0 && ` ・ 已經 ${passed} 天`}
                       </p>
@@ -87,22 +88,26 @@ function AnniversarySheet({ personId, word, existing, defaultTitle, onClose }: {
   const [date, setDate] = useState(existing?.date ?? '')
   const [recurring, setRecurring] = useState(existing?.recurring ?? true)
   const [note, setNote] = useState(existing?.note ?? '')
+  const [tried, setTried] = useState(false)
+  const dirty = useDirty([title, date, recurring, note])
+  const toast = useToast()
 
   const submit = async () => {
-    if (!title.trim() || !date) return
+    if (!title.trim() || !date) return setTried(true)
     const patch = { title: title.trim(), date, recurring, note: note.trim() || undefined }
     if (existing) await anniversariesRepo.update(existing.id, patch)
     else await anniversariesRepo.add({ ...patch, personId })
+    toast(existing ? '已儲存' : '已新增')
     onClose()
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={existing ? `編輯${word}` : `新增${word}`}>
+    <BottomSheet open onClose={onClose} dirty={dirty} title={existing ? `編輯${word}` : `新增${word}`}>
       <div className="space-y-4">
-        <Field label="名稱">
+        <Field label="名稱" required error={tried && !title.trim() ? '請填寫名稱' : undefined}>
           <input className={inputCls} value={title} onChange={e => setTitle(e.target.value)} placeholder={word === '紀念日' ? '例:第一次見面' : '例:生日、簽約週年'} />
         </Field>
-        <Field label="日期">
+        <Field label="日期" required error={tried && !date ? '請選擇日期' : undefined}>
           <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
         </Field>
         <label className="flex items-center gap-2 text-sm">
@@ -114,7 +119,11 @@ function AnniversarySheet({ personId, word, existing, defaultTitle, onClose }: {
         </Field>
         <PrimaryButton onClick={submit}>{existing ? '儲存' : '新增'}</PrimaryButton>
         {existing && (
-          <DeleteButton onConfirm={async () => { await anniversariesRepo.remove(existing.id); onClose() }} />
+          <DeleteButton onDelete={async () => {
+            const undo = await anniversariesRepo.remove(existing.id)
+            onClose()
+            toast('已刪除', { action: { label: '復原', onClick: undo } })
+          }} />
         )}
       </div>
     </BottomSheet>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SectionCard, EmptyState, AddButton, BottomSheet, Chip, Field, inputCls, PrimaryButton, DeleteButton } from '../ui'
+import { SectionCard, EmptyState, AddButton, BottomSheet, Chip, Field, inputCls, PrimaryButton, DeleteButton, CheckButton, useDirty } from '../ui'
+import { useToast } from '../toast'
 import { PLACE_TYPE_LABEL } from '../../labels'
 import { fmt } from '../../utils/dates'
 import { placesRepo, today } from '../../db/repo'
@@ -24,16 +25,14 @@ export function PlacesTab({ personId, items }: { personId: string; items: Place[
                 {list.map(p => (
                   <li key={p.id} className="flex items-center gap-2 py-2.5 first:pt-0 last:pb-0">
                     {type === 'promised_together' && (
-                      <button
-                        aria-label={p.completed ? '取消完成' : '標記完成'}
+                      <CheckButton
+                        checked={!!p.completed}
+                        label={p.completed ? '取消完成' : '標記完成'}
                         onClick={() =>
                           placesRepo.update(p.id, p.completed
                             ? { completed: false, completedDate: undefined }
                             : { completed: true, completedDate: today() })
                         }
-                        className={`h-5 w-5 shrink-0 rounded border ${
-                          p.completed ? 'border-accent-500 bg-accent-500' : 'border-neutral-300'
-                        }`}
                       />
                     )}
                     <button onClick={() => setEditing(p)} className="min-w-0 flex-1 text-left">
@@ -44,7 +43,7 @@ export function PlacesTab({ personId, items }: { personId: string; items: Place[
                             {fmt(p.completedDate)} 達成
                           </span>
                         )}
-                        {p.date && <span className="text-xs text-neutral-400">{fmt(p.date)}</span>}
+                        {p.date && <span className="text-xs text-neutral-500">{fmt(p.date)}</span>}
                       </div>
                       {p.note && <p className="mt-0.5 text-xs text-neutral-500">{p.note}</p>}
                     </button>
@@ -73,17 +72,21 @@ function PlaceSheet({ personId, existing, onClose }: {
   const [name, setName] = useState(existing?.name ?? '')
   const [date, setDate] = useState(existing?.date ?? '')
   const [note, setNote] = useState(existing?.note ?? '')
+  const [tried, setTried] = useState(false)
+  const dirty = useDirty([type, name, date, note])
+  const toast = useToast()
 
   const submit = async () => {
-    if (!name.trim()) return
+    if (!name.trim()) return setTried(true)
     const patch = { type, name: name.trim(), date: date || undefined, note: note.trim() || undefined }
     if (existing) await placesRepo.update(existing.id, patch)
     else await placesRepo.add({ ...patch, personId })
+    toast(existing ? '已儲存' : '已新增')
     onClose()
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={existing ? '編輯地點' : '新增地點'}>
+    <BottomSheet open onClose={onClose} dirty={dirty} title={existing ? '編輯地點' : '新增地點'}>
       <div className="space-y-4">
         <Field label="類型">
           <div className="flex flex-wrap gap-2">
@@ -92,7 +95,7 @@ function PlaceSheet({ personId, existing, onClose }: {
             ))}
           </div>
         </Field>
-        <Field label="地點名稱">
+        <Field label="地點名稱" required error={tried && !name.trim() ? '請填寫地點名稱' : undefined}>
           <input className={inputCls} value={name} onChange={e => setName(e.target.value)} placeholder="例:嵐山竹林" />
         </Field>
         {type === 'visited' && (
@@ -105,7 +108,11 @@ function PlaceSheet({ personId, existing, onClose }: {
         </Field>
         <PrimaryButton onClick={submit}>{existing ? '儲存' : '新增'}</PrimaryButton>
         {existing && (
-          <DeleteButton onConfirm={async () => { await placesRepo.remove(existing.id); onClose() }} />
+          <DeleteButton onDelete={async () => {
+            const undo = await placesRepo.remove(existing.id)
+            onClose()
+            toast('已刪除', { action: { label: '復原', onClick: undo } })
+          }} />
         )}
       </div>
     </BottomSheet>

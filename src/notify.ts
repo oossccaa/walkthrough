@@ -2,6 +2,7 @@
 // 畫面內一定會顯示;若使用者有授權瀏覽器通知,額外發系統通知(每項每天最多一次)。
 
 import { db } from './db/db'
+import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { daysUntilNext, fmt } from './utils/dates'
 import { today } from './db/repo'
 
@@ -42,7 +43,7 @@ export async function getReminders(): Promise<ReminderItem[]> {
 
   const t = today()
   for (const it of itineraries) {
-    const diff = Math.round((Date.parse(it.date) - Date.parse(t)) / 86_400_000)
+    const diff = differenceInCalendarDays(parseISO(it.date), new Date())
     if (diff === 0 || diff === 1) {
       const who = nameOf(it.personId)
       items.push({

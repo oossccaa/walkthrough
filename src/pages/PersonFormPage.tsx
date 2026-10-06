@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { SectionCard, Chip, Field, inputCls, PrimaryButton, DeleteButton } from '../components/ui'
-import { ROLE_LABEL, ROLE_ORDER, ROLE_HINT } from '../labels'
+import { SectionCard, Chip, Field, inputCls, PrimaryButton, DeleteButton, BackButton, useBack, useDirty } from '../components/ui'
+import { useToast } from '../components/toast'
+import { ROLE_LABEL, ROLE_ORDER, ROLE_HINT, ROLE_MODULES, moduleLabel } from '../labels'
 import { useApp } from '../store'
 import { addPerson, updatePerson, deletePerson } from '../db/repo'
 import { THEMES, THEME_KEYS, isThemeKey } from '../theme'
@@ -28,6 +29,9 @@ export function PersonFormPage() {
 
 function PersonForm({ existing }: { existing?: Person }) {
   const navigate = useNavigate()
+  const toast = useToast()
+  const back = useBack(existing ? `/person/${existing.id}` : '/')
+  const [tried, setTried] = useState(false)
 
   // 新增流程:先選身份,身份決定之後能記錄哪些模組
   const [role, setRole] = useState<PersonRole | null>(existing?.role ?? null)
@@ -43,12 +47,19 @@ function PersonForm({ existing }: { existing?: Person }) {
   const [metPlace, setMetPlace] = useState(existing?.metAt?.place ?? '')
   const [metStory, setMetStory] = useState(existing?.metAt?.story ?? '')
   const [notes, setNotes] = useState(existing?.notes ?? '')
+  const dirty = useDirty([role, color, name, nickname, company, jobTitle, birthday, metDate, metPlace, metStory, notes])
+
+  // 有改過內容就先確認,避免按返回把剛打的字丟掉
+  const leave = () => {
+    if (dirty && !confirm('有尚未儲存的內容,要放棄這次的編輯嗎?')) return
+    back()
+  }
 
   if (!role) {
     return (
       <div className="space-y-4 pb-10">
         <header className="flex items-center gap-3 pt-2">
-          <button onClick={() => navigate(-1)} className="text-sm text-neutral-400">‹ 返回</button>
+          <BackButton />
           <h1 className="text-xl font-black">這個人是你的…</h1>
         </header>
         <div className="space-y-3">
@@ -59,7 +70,7 @@ function PersonForm({ existing }: { existing?: Person }) {
               className="w-full rounded-2xl bg-paper p-4 text-left shadow-sm border border-neutral-200/60 active:bg-accent-50"
             >
               <p className="font-bold">{ROLE_LABEL[r]}</p>
-              <p className="mt-0.5 text-xs text-neutral-400">{ROLE_HINT[r]}</p>
+              <p className="mt-0.5 text-xs text-neutral-500">{ROLE_HINT[r]}</p>
             </button>
           ))}
         </div>
@@ -68,17 +79,20 @@ function PersonForm({ existing }: { existing?: Person }) {
   }
 
   const submit = async () => {
-    if (!name.trim()) return
+    if (!name.trim()) {
+      setTried(true)
+      return
+    }
     const metAt = (metDate || metPlace || metStory)
       ? { date: metDate || undefined, place: metPlace.trim() || undefined, story: metStory.trim() || undefined }
       : undefined
-    const showWork = role === 'client' || role === 'coworker'
+    // 公司/職稱在非工作身份時只是隱藏不顯示,照樣保留,改回客戶/同事時還在
     const data = {
       name: name.trim(),
       nickname: nickname.trim() || undefined,
       role,
-      company: showWork ? company.trim() || undefined : undefined,
-      jobTitle: showWork ? jobTitle.trim() || undefined : undefined,
+      company: company.trim() || undefined,
+      jobTitle: jobTitle.trim() || undefined,
       birthday: birthday || undefined,
       metAt,
       notes: notes.trim() || undefined,
@@ -86,12 +100,19 @@ function PersonForm({ existing }: { existing?: Person }) {
     }
     if (existing) {
       await updatePerson(existing.id, data)
-      navigate(`/person/${existing.id}`)
+      toast('已儲存')
+      navigate(`/person/${existing.id}`, { replace: true })
     } else {
       const p = await addPerson(data)
-      navigate(`/person/${p.id}`)
+      toast(`已新增「${p.name}」`)
+      navigate(`/person/${p.id}`, { replace: true })
     }
   }
+
+  // 編輯時切換身份:列出會被隱藏的分頁,讓使用者知道資料沒有消失
+  const hiddenModules = existing && role !== existing.role
+    ? ROLE_MODULES[existing.role].filter(m => !ROLE_MODULES[role].includes(m))
+    : []
 
   return (
     <div className="space-y-4 pb-10">
@@ -108,9 +129,15 @@ function PersonForm({ existing }: { existing?: Person }) {
                 <Chip key={r} selected={role === r} onClick={() => setRole(r)}>{ROLE_LABEL[r]}</Chip>
               ))}
             </div>
-            <p className="mt-1 text-xs text-neutral-400">{ROLE_HINT[role]}</p>
+            <p className="mt-1 text-xs text-neutral-500">{ROLE_HINT[role]}</p>
+            {hiddenModules.length > 0 && existing && (
+              <p className="mt-2 rounded-lg bg-accent-50 px-3 py-2 text-xs text-accent-700">
+                {`切換後「${hiddenModules.map(m => moduleLabel(m, existing.role === 'partner')).join('、')}」分頁會隱藏,`}
+                {`已記錄的資料仍會保留,改回${ROLE_LABEL[existing.role]}就會再出現。`}
+              </p>
+            )}
           </Field>
-          <Field label="名字">
+          <Field label="名字" required error={tried && !name.trim() ? '請填寫名字' : undefined}>
             <input className={inputCls} value={name} onChange={e => setName(e.target.value)} placeholder="名字或暱稱" />
           </Field>
           <Field label="暱稱(選填)">
@@ -144,7 +171,7 @@ function PersonForm({ existing }: { existing?: Person }) {
                 />
               ))}
             </div>
-            <p className="mt-1 text-xs text-neutral-400">
+            <p className="mt-1 text-xs text-neutral-500">
               {color ? `已選:${THEMES[color as keyof typeof THEMES].label}(再點一下取消)` : '未選,使用全域主色'}
             </p>
           </Field>
@@ -176,7 +203,12 @@ function PersonForm({ existing }: { existing?: Person }) {
       {existing && (
         <DeleteButton
           label="刪除這個人(含所有紀錄)"
-          onConfirm={async () => { await deletePerson(existing.id); navigate('/') }}
+          confirmText={`確定要刪除「${existing.name}」及所有相關紀錄嗎?`}
+          onDelete={async () => {
+            const undo = await deletePerson(existing.id)
+            navigate('/', { replace: true })
+            toast(`已刪除「${existing.name}」`, { action: { label: '復原', onClick: undo } })
+          }}
         />
       )}
     </div>

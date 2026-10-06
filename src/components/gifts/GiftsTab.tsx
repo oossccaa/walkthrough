@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SectionCard, EmptyState, AddButton, BottomSheet, Chip, Field, inputCls, PrimaryButton, DeleteButton } from '../ui'
+import { SectionCard, EmptyState, AddButton, BottomSheet, Chip, Field, inputCls, PrimaryButton, DeleteButton, useDirty } from '../ui'
+import { useToast } from '../toast'
 import { fmt } from '../../utils/dates'
 import { giftsRepo } from '../../db/repo'
 import type { Gift, GiftDirection } from '../../types'
@@ -82,9 +83,13 @@ function GiftSheet({ personId, existing, onClose }: {
   const [price, setPrice] = useState(existing?.price?.toString() ?? '')
   const [sourceContext, setSourceContext] = useState(existing?.sourceContext ?? '')
   const [purchased, setPurchased] = useState(existing?.purchased ?? false)
+  const [tried, setTried] = useState(false)
+  const dirty = useDirty([direction, name, date, occasion, reaction, price, sourceContext, purchased])
+  const toast = useToast()
+  const priceInvalid = price.trim() !== '' && !(Number(price) >= 0)
 
   const submit = async () => {
-    if (!name.trim()) return
+    if (!name.trim() || priceInvalid) return setTried(true)
     const isGiven = direction === 'given'
     const patch = {
       direction,
@@ -98,11 +103,12 @@ function GiftSheet({ personId, existing, onClose }: {
     }
     if (existing) await giftsRepo.update(existing.id, patch)
     else await giftsRepo.add({ ...patch, personId })
+    toast(existing ? '已儲存' : '已新增')
     onClose()
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={existing ? '編輯禮物' : '新增禮物'}>
+    <BottomSheet open onClose={onClose} dirty={dirty} title={existing ? '編輯禮物' : '新增禮物'}>
       <div className="space-y-4">
         <Field label="類型">
           <div className="flex gap-2">
@@ -110,7 +116,7 @@ function GiftSheet({ personId, existing, onClose }: {
             <Chip selected={direction === 'given'} onClick={() => setDirection('given')}>送過的</Chip>
           </div>
         </Field>
-        <Field label="名稱">
+        <Field label="名稱" required error={tried && !name.trim() ? '請填寫名稱' : undefined}>
           <input className={inputCls} value={name} onChange={e => setName(e.target.value)} placeholder="例:香氛蠟燭" />
         </Field>
         {direction === 'given' ? (
@@ -138,12 +144,16 @@ function GiftSheet({ personId, existing, onClose }: {
             </label>
           </>
         )}
-        <Field label="價格(選填)">
-          <input type="number" inputMode="numeric" className={inputCls} value={price} onChange={e => setPrice(e.target.value)} placeholder="1280" />
+        <Field label="價格(選填)" error={priceInvalid ? '請輸入 0 以上的數字' : undefined}>
+          <input type="number" inputMode="numeric" min={0} className={inputCls} value={price} onChange={e => setPrice(e.target.value)} placeholder="1280" />
         </Field>
         <PrimaryButton onClick={submit}>{existing ? '儲存' : '新增'}</PrimaryButton>
         {existing && (
-          <DeleteButton onConfirm={async () => { await giftsRepo.remove(existing.id); onClose() }} />
+          <DeleteButton onDelete={async () => {
+            const undo = await giftsRepo.remove(existing.id)
+            onClose()
+            toast('已刪除', { action: { label: '復原', onClick: undo } })
+          }} />
         )}
       </div>
     </BottomSheet>

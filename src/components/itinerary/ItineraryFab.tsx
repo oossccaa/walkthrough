@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useMatch } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BottomSheet, Chip, EmptyState, Field, inputCls, PrimaryButton } from '../ui'
+import { BottomSheet, Chip, EmptyState, Field, inputCls, PrimaryButton, DeleteButton, useDirty } from '../ui'
+import { useToast } from '../toast'
 import { fmt } from '../../utils/dates'
 import { db } from '../../db/db'
 import { itinerariesRepo, nowIso, today } from '../../db/repo'
@@ -12,6 +14,17 @@ import type { Itinerary, ItineraryStop, ItineraryTimeType } from '../../types'
 export function ItineraryFab() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mode, setMode] = useState<'none' | 'view' | 'add'>('none')
+  const [editing, setEditing] = useState<Itinerary | null>(null)
+  const { persons } = useApp()
+
+  // 在某人的主頁開啟時,新增行程預設帶入這個人
+  const personMatch = useMatch('/person/:id')
+  const currentPersonId = persons.some(p => p.id === personMatch?.params.id) ? personMatch?.params.id : undefined
+
+  // 表單頁不顯示,避免蓋住底部的儲存/刪除按鈕
+  const onNewForm = useMatch('/person/new')
+  const onEditForm = useMatch('/person/:id/edit')
+  if (onNewForm || onEditForm) return null
 
   return (
     <>
@@ -41,8 +54,13 @@ export function ItineraryFab() {
         </button>
       </div>
 
-      <ViewItinerarySheet open={mode === 'view'} onClose={() => setMode('none')} />
-      {mode === 'add' && <AddItinerarySheet onClose={() => setMode('none')} />}
+      <ViewItinerarySheet
+        open={mode === 'view' && !editing}
+        onClose={() => setMode('none')}
+        onEdit={setEditing}
+      />
+      {mode === 'add' && <ItinerarySheet defaultPersonId={currentPersonId} onClose={() => setMode('none')} />}
+      {editing && <ItinerarySheet existing={editing} onClose={() => setEditing(null)} />}
     </>
   )
 }
@@ -71,7 +89,11 @@ export function ItineraryTimeline({ stops }: { stops: ItineraryStop[] }) {
 
 // ---- 觀看行程 ----
 
-function ViewItinerarySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+function ViewItinerarySheet({ open, onClose, onEdit }: {
+  open: boolean
+  onClose: () => void
+  onEdit: (it: Itinerary) => void
+}) {
   const itineraries = useLiveQuery(() => db.itineraries.toArray(), []) ?? []
   const { persons } = useApp()
   const personName = (id?: string) => persons.find(p => p.id === id)?.name
@@ -81,7 +103,11 @@ function ViewItinerarySheet({ open, onClose }: { open: boolean; onClose: () => v
 
   const renderList = (list: Itinerary[]) =>
     list.map(it => (
-      <div key={it.id} className="rounded-2xl border border-neutral-200/60 bg-paper p-3">
+      <button
+        key={it.id}
+        onClick={() => onEdit(it)}
+        className="block w-full rounded-2xl border border-neutral-200/60 bg-paper p-3 text-left active:bg-accent-50"
+      >
         <div className="mb-2 flex items-center gap-2">
           <span className="font-bold">{fmt(it.date)}</span>
           {personName(it.personId) && (
@@ -89,19 +115,14 @@ function ViewItinerarySheet({ open, onClose }: { open: boolean; onClose: () => v
               與 {personName(it.personId)}
             </span>
           )}
-          <button
-            onClick={() => { if (confirm('刪除這份行程?')) itinerariesRepo.remove(it.id) }}
-            className="ml-auto text-xs text-neutral-400 underline"
-          >
-            刪除
-          </button>
+          <span className="ml-auto text-xs font-medium text-accent-600">編輯 ›</span>
         </div>
         <ItineraryTimeline stops={it.stops} />
-      </div>
+      </button>
     ))
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="行程">
+    <BottomSheet open={open} onClose={onClose} title="行程" subtitle="點一下行程可以編輯或刪除">
       <div className="space-y-3">
         {itineraries.length === 0 && <EmptyState text="還沒有行程,先去新增一個吧" />}
         {upcoming.length > 0 && (
@@ -121,7 +142,7 @@ function ViewItinerarySheet({ open, onClose }: { open: boolean; onClose: () => v
   )
 }
 
-// ---- 新增行程 ----
+// ---- 新增 / 編輯行程 ----
 
 interface DraftStop {
   place: string
@@ -133,21 +154,37 @@ interface DraftStop {
 
 const emptyStop = (): DraftStop => ({ place: '', timeType: 'range', startTime: '', endTime: '', note: '' })
 
-function AddItinerarySheet({ onClose }: { onClose: () => void }) {
+const toDraft = (s: ItineraryStop): DraftStop => ({
+  place: s.place,
+  timeType: s.timeType,
+  startTime: s.startTime ?? '',
+  endTime: s.endTime ?? '',
+  note: s.note ?? '',
+})
+
+function ItinerarySheet({ existing, defaultPersonId, onClose }: {
+  existing?: Itinerary
+  defaultPersonId?: string
+  onClose: () => void
+}) {
   const { persons } = useApp()
-  const [date, setDate] = useState('')
-  const [personId, setPersonId] = useState<string | undefined>(undefined)
-  const [stops, setStops] = useState<DraftStop[]>([emptyStop()])
+  const toast = useToast()
+  const [date, setDate] = useState(existing?.date ?? '')
+  const [personId, setPersonId] = useState<string | undefined>(existing ? existing.personId : defaultPersonId)
+  const [stops, setStops] = useState<DraftStop[]>(existing ? existing.stops.map(toDraft) : [emptyStop()])
+  const [tried, setTried] = useState(false)
+  const dirty = useDirty([date, personId, stops])
+  const hasStop = stops.some(s => s.place.trim())
 
   const updateStop = (i: number, patch: Partial<DraftStop>) =>
     setStops(prev => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)))
 
   const submit = async () => {
     const validStops = stops.filter(s => s.place.trim())
-    if (!date || validStops.length === 0) return
+    if (!date || validStops.length === 0) return setTried(true)
     const now = nowIso()
-    await itinerariesRepo.add({
-      // 單一對象模式下,行程自動掛在唯一的對象上
+    const data = {
+      // 名冊只有一個人時,行程自動掛在這個人身上
       personId: personId ?? (persons.length === 1 ? persons[0].id : undefined),
       date,
       stops: validStops.map((s, i) => ({
@@ -158,21 +195,23 @@ function AddItinerarySheet({ onClose }: { onClose: () => void }) {
         endTime: s.timeType === 'range' ? s.endTime || undefined : undefined,
         note: s.note.trim() || undefined,
       })),
-      createdAt: now,
       updatedAt: now,
-    })
+    }
+    if (existing) await itinerariesRepo.update(existing.id, data)
+    else await itinerariesRepo.add({ ...data, createdAt: now })
+    toast(existing ? '行程已儲存' : '行程已新增')
     onClose()
   }
 
   return (
-    <BottomSheet open onClose={onClose} title="新增行程">
+    <BottomSheet open onClose={onClose} dirty={dirty} title={existing ? '編輯行程' : '新增行程'}>
       <div className="space-y-4">
-        <Field label="日期">
+        <Field label="日期" required error={tried && !date ? '請選擇日期' : undefined}>
           <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
         </Field>
 
         {persons.length > 1 && (
-          <Field label="對象">
+          <Field label="和誰(選填)">
             <div className="flex flex-wrap gap-2">
               {persons.map(p => (
                 <Chip key={p.id} selected={personId === p.id} onClick={() => setPersonId(p.id)}>
@@ -188,17 +227,21 @@ function AddItinerarySheet({ onClose }: { onClose: () => void }) {
           {stops.map((s, i) => (
             <div key={i} className="rounded-2xl border border-neutral-200 p-3 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-neutral-400">行程點 {i + 1}</span>
+                <span className="text-xs font-bold text-neutral-500">行程點 {i + 1}</span>
                 {stops.length > 1 && (
                   <button
-                    className="text-xs text-neutral-400 underline"
+                    className="text-xs text-neutral-500 underline"
                     onClick={() => setStops(prev => prev.filter((_, idx) => idx !== i))}
                   >
                     移除
                   </button>
                 )}
               </div>
-              <Field label="地點">
+              <Field
+                label="地點"
+                required={i === 0}
+                error={i === 0 && tried && !hasStop ? '至少要填一個地點' : undefined}
+              >
                 <input
                   className={inputCls}
                   value={s.place}
@@ -250,6 +293,16 @@ function AddItinerarySheet({ onClose }: { onClose: () => void }) {
         </div>
 
         <PrimaryButton onClick={submit}>儲存行程</PrimaryButton>
+        {existing && (
+          <DeleteButton
+            label="刪除這份行程"
+            onDelete={async () => {
+              const undo = await itinerariesRepo.remove(existing.id)
+              onClose()
+              toast('已刪除行程', { action: { label: '復原', onClick: undo } })
+            }}
+          />
+        )}
       </div>
     </BottomSheet>
   )

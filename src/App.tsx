@@ -6,6 +6,7 @@ import { PersonFormPage } from './pages/PersonFormPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ItineraryFab } from './components/itinerary/ItineraryFab'
 import { AppProvider } from './store'
+import { ToastProvider } from './components/toast'
 import { fireNotifications } from './notify'
 
 // HashRouter:GitHub Pages 靜態站不支援 SPA fallback,用 hash 避免重新整理時 404
@@ -17,16 +18,18 @@ export default function App() {
   return (
     <HashRouter>
       <AppProvider>
-        <div className="mx-auto min-h-dvh max-w-md px-4 pb-8">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/person/new" element={<PersonFormPage />} />
-            <Route path="/person/:id" element={<PersonPage />} />
-            <Route path="/person/:id/edit" element={<PersonFormPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
-        </div>
-        <ItineraryFab />
+        <ToastProvider>
+          <div className="mx-auto min-h-dvh max-w-md px-4 pb-8">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/person/new" element={<PersonFormPage />} />
+              <Route path="/person/:id" element={<PersonPage />} />
+              <Route path="/person/:id/edit" element={<PersonFormPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </div>
+          <ItineraryFab />
+        </ToastProvider>
       </AppProvider>
     </HashRouter>
   )

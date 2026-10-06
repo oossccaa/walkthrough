@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SectionCard, EmptyState, AddButton, BottomSheet, Field, inputCls, PrimaryButton, DeleteButton } from '../ui'
+import { SectionCard, EmptyState, AddButton, BottomSheet, Field, inputCls, PrimaryButton, DeleteButton, CheckButton, useDirty } from '../ui'
+import { useToast } from '../toast'
 import { fmt } from '../../utils/dates'
 import { promisesRepo, today } from '../../db/repo'
 import type { PromiseItem, PersonRole } from '../../types'
@@ -28,11 +29,7 @@ export function PromisesTab({ personId, role, items }: { personId: string; role:
           <ul className="divide-y divide-neutral-100">
             {todo.map(p => (
               <li key={p.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
-                <button
-                  aria-label="標記完成"
-                  onClick={() => toggle(p)}
-                  className="h-5 w-5 shrink-0 rounded border border-neutral-300"
-                />
+                <CheckButton checked={false} label="標記完成" onClick={() => toggle(p)} />
                 <button onClick={() => setEditing(p)} className="min-w-0 flex-1 text-left">
                   <span className="font-medium">{p.content}</span>
                   {p.note && <p className="text-xs text-neutral-500">{p.note}</p>}
@@ -51,14 +48,10 @@ export function PromisesTab({ personId, role, items }: { personId: string; role:
             {done.map(p => (
               <li key={p.id} className="py-2.5 first:pt-0 last:pb-0">
                 <div className="flex items-center gap-3">
-                  <button
-                    aria-label="取消完成"
-                    onClick={() => toggle(p)}
-                    className="h-5 w-5 shrink-0 rounded border border-accent-500 bg-accent-500"
-                  />
+                  <CheckButton checked label="取消完成" onClick={() => toggle(p)} />
                   <button onClick={() => setEditing(p)} className="min-w-0 flex-1 text-left">
                     <span className="font-medium text-neutral-400 line-through decoration-neutral-300">{p.content}</span>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-neutral-500">
                       {fmt(p.completedDate)} 達成
                       {p.note && ` ・ ${p.note}`}
                     </p>
@@ -94,19 +87,23 @@ function PromiseSheet({ personId, word, isPartner, existing, onClose }: {
 }) {
   const [content, setContent] = useState(existing?.content ?? '')
   const [note, setNote] = useState(existing?.note ?? '')
+  const [tried, setTried] = useState(false)
+  const dirty = useDirty([content, note])
+  const toast = useToast()
 
   const submit = async () => {
-    if (!content.trim()) return
+    if (!content.trim()) return setTried(true)
     const patch = { content: content.trim(), note: note.trim() || undefined }
     if (existing) await promisesRepo.update(existing.id, patch)
     else await promisesRepo.add({ ...patch, personId, completed: false })
+    toast(existing ? '已儲存' : '已新增')
     onClose()
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={existing ? `編輯${word}` : `新增${word}`}>
+    <BottomSheet open onClose={onClose} dirty={dirty} title={existing ? `編輯${word}` : `新增${word}`}>
       <div className="space-y-4">
-        <Field label={`${word}內容`}>
+        <Field label={`${word}內容`} required error={tried && !content.trim() ? `請填寫${word}內容` : undefined}>
           <input
             className={inputCls}
             value={content}
@@ -119,7 +116,11 @@ function PromiseSheet({ personId, word, isPartner, existing, onClose }: {
         </Field>
         <PrimaryButton onClick={submit}>{existing ? '儲存' : '新增'}</PrimaryButton>
         {existing && (
-          <DeleteButton onConfirm={async () => { await promisesRepo.remove(existing.id); onClose() }} />
+          <DeleteButton onDelete={async () => {
+            const undo = await promisesRepo.remove(existing.id)
+            onClose()
+            toast('已刪除', { action: { label: '復原', onClick: undo } })
+          }} />
         )}
       </div>
     </BottomSheet>

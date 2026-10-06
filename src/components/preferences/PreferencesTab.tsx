@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { SectionCard, Chip, EmptyState, BottomSheet, Field, inputCls, PrimaryButton, AddButton, DeleteButton } from '../ui'
+import { SectionCard, Chip, EmptyState, BottomSheet, Field, inputCls, PrimaryButton, AddButton, DeleteButton, useDirty } from '../ui'
+import { useToast } from '../toast'
 import { CATEGORY_LABEL, SENTIMENT_LABEL, SENTIMENT_STYLE, SENTIMENT_DOT } from '../../labels'
 import { preferencesRepo, nowIso } from '../../db/repo'
 import type { Preference, PreferenceCategory, Sentiment } from '../../types'
@@ -81,9 +82,12 @@ function PreferenceSheet({ personId, existing, onClose }: {
   const [detail, setDetail] = useState(existing?.detail ?? '')
   const [note, setNote] = useState(existing?.note ?? '')
   const [sourceContext, setSourceContext] = useState(existing?.sourceContext ?? '')
+  const [tried, setTried] = useState(false)
+  const dirty = useDirty([category, sentiment, name, detail, note, sourceContext])
+  const toast = useToast()
 
   const submit = async () => {
-    if (!name.trim()) return
+    if (!name.trim()) return setTried(true)
     const patch = {
       category,
       sentiment,
@@ -95,11 +99,12 @@ function PreferenceSheet({ personId, existing, onClose }: {
     }
     if (existing) await preferencesRepo.update(existing.id, patch)
     else await preferencesRepo.add({ ...patch, personId, createdAt: nowIso() })
+    toast(existing ? '已儲存' : '已新增')
     onClose()
   }
 
   return (
-    <BottomSheet open onClose={onClose} title={existing ? '編輯喜好' : '新增喜好'}>
+    <BottomSheet open onClose={onClose} dirty={dirty} title={existing ? '編輯喜好' : '新增喜好'}>
       <div className="space-y-4">
         <Field label="分類">
           <div className="flex flex-wrap gap-2">
@@ -110,7 +115,7 @@ function PreferenceSheet({ personId, existing, onClose }: {
             ))}
           </div>
         </Field>
-        <Field label="名稱">
+        <Field label="名稱" required error={tried && !name.trim() ? '請填寫名稱' : undefined}>
           <input className={inputCls} value={name} onChange={e => setName(e.target.value)} placeholder="例:香菜、威士忌、進擊的巨人" />
         </Field>
         <Field label="喜好程度">
@@ -133,7 +138,11 @@ function PreferenceSheet({ personId, existing, onClose }: {
         </Field>
         <PrimaryButton onClick={submit}>{existing ? '儲存' : '新增'}</PrimaryButton>
         {existing && (
-          <DeleteButton onConfirm={async () => { await preferencesRepo.remove(existing.id); onClose() }} />
+          <DeleteButton onDelete={async () => {
+            const undo = await preferencesRepo.remove(existing.id)
+            onClose()
+            toast('已刪除', { action: { label: '復原', onClick: undo } })
+          }} />
         )}
       </div>
     </BottomSheet>

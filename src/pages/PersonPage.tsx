@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ROLE_LABEL, ROLE_STYLE, ROLE_MODULES, type ModuleKey } from '../labels'
+import { ROLE_LABEL, ROLE_STYLE, ROLE_MODULES, moduleLabel, type ModuleKey } from '../labels'
 import { daysSince, fmt } from '../utils/dates'
 import { useApp } from '../store'
 import { db } from '../db/db'
-import { getReminders, type ReminderItem } from '../notify'
+import { BackButton } from '../components/ui'
+import { ReminderBanner } from '../components/ReminderBanner'
 import { applyPersonTheme, restoreGlobalTheme, isThemeKey } from '../theme'
 import { QuickCard } from '../components/quickcard/QuickCard'
 import { PreferencesTab } from '../components/preferences/PreferencesTab'
@@ -15,24 +16,11 @@ import { GiftsTab } from '../components/gifts/GiftsTab'
 import { AnniversariesTab } from '../components/anniversaries/AnniversariesTab'
 import { PromisesTab } from '../components/promises/PromisesTab'
 
-// 「紀念日/約定」是對象限定的說法,其他身份用中性詞
-function tabLabel(m: ModuleKey, isPartner: boolean): string {
-  const labels: Record<ModuleKey, string> = {
-    quick: '速查',
-    preferences: '喜好',
-    places: '地點',
-    relations: '人物',
-    gifts: '禮物',
-    anniversaries: isPartner ? '紀念日' : '重要日子',
-    promises: isPartner ? '約定' : '承諾',
-  }
-  return labels[m]
-}
-
 export function PersonPage() {
   const { id } = useParams()
   const { persons, ready } = useApp()
   const [tab, setTab] = useState<ModuleKey>('quick')
+  const navRef = useRef<HTMLElement>(null)
   const person = persons.find(p => p.id === id)
 
   const preferences = useLiveQuery(() => db.preferences.where('personId').equals(id!).toArray(), [id]) ?? []
@@ -57,7 +45,7 @@ export function PersonPage() {
   if (!person) {
     return (
       <div className="py-20 text-center text-neutral-400">
-        找不到這個人 <Link to="/" className="text-accent-600 underline">回名冊</Link>
+        找不到這個人,可能已被刪除。<Link to="/" className="text-accent-600 underline">回名冊</Link>
       </div>
     )
   }
@@ -70,15 +58,23 @@ export function PersonPage() {
     ? anniversaries.find(a => a.title.includes('在一起'))
     : undefined
 
+  // 從速查卡跳到某個分頁,並把分頁列捲到可見位置
+  const jump = (m: ModuleKey) => {
+    setTab(m)
+    navRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }
+
   return (
     <div className="space-y-4">
       <header className="pt-2">
         <div className="mb-3 flex items-center justify-between">
-          <Link to="/" className="text-sm text-neutral-400">‹ 名冊</Link>
-          <div className="flex items-center gap-4">
-            <Link to="/settings" className="text-sm text-neutral-400">設定</Link>
-            <Link to={`/person/${person.id}/edit`} className="text-sm font-medium text-accent-600">編輯</Link>
-          </div>
+          <BackButton label="名冊" />
+          <Link
+            to={`/person/${person.id}/edit`}
+            className="-mr-2 flex h-9 items-center rounded-lg px-2 text-sm font-medium text-accent-600 active:bg-accent-50"
+          >
+            編輯
+          </Link>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent-400 text-2xl font-black text-white">
@@ -92,7 +88,7 @@ export function PersonPage() {
                 {ROLE_LABEL[person.role]}
               </span>
             </div>
-            <div className="mt-1 space-y-0.5 text-xs text-neutral-400">
+            <div className="mt-1 space-y-0.5 text-xs text-neutral-500">
               {together && (
                 <p className="font-bold text-accent-600">在一起 {daysSince(together.date)} 天</p>
               )}
@@ -115,17 +111,19 @@ export function PersonPage() {
 
       <ReminderBanner personId={person.id} />
 
-      <nav className="sticky top-0 z-10 -mx-4 bg-accent-50/90 px-4 py-2 backdrop-blur">
-        <div className="flex gap-2 overflow-x-auto">
+      <nav ref={navRef} className="sticky top-0 z-10 -mx-4 bg-accent-50/90 px-4 py-2 backdrop-blur">
+        <div role="tablist" className="flex gap-2 overflow-x-auto">
           {modules.map(m => (
             <button
               key={m}
+              role="tab"
+              aria-selected={activeTab === m}
               onClick={() => setTab(m)}
               className={`shrink-0 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
                 activeTab === m ? 'bg-accent-500 text-white' : 'bg-paper text-neutral-500 border border-neutral-200'
               }`}
             >
-              {tabLabel(m, person.role === 'partner')}
+              {moduleLabel(m, person.role === 'partner')}
             </button>
           ))}
         </div>
@@ -141,6 +139,7 @@ export function PersonPage() {
             relations={relations}
             itineraries={itineraries}
             promises={promises}
+            onJump={jump}
           />
         )}
         {activeTab === 'preferences' && <PreferencesTab personId={person.id} items={preferences} />}
@@ -150,37 +149,6 @@ export function PersonPage() {
         {activeTab === 'anniversaries' && <AnniversariesTab personId={person.id} role={person.role} items={anniversaries} />}
         {activeTab === 'promises' && <PromisesTab personId={person.id} role={person.role} items={promises} />}
       </div>
-    </div>
-  )
-}
-
-/** 到期提醒橫幅:N 天內的紀念日、今明兩天的行程 */
-function ReminderBanner({ personId }: { personId: string }) {
-  const [items, setItems] = useState<ReminderItem[]>([])
-
-  useEffect(() => {
-    let alive = true
-    getReminders().then(all => {
-      if (alive) setItems(all.filter(i => !i.personId || i.personId === personId))
-    })
-    return () => { alive = false }
-  }, [personId])
-
-  if (items.length === 0) return null
-
-  return (
-    <div className="rounded-2xl border border-accent-200 bg-accent-100/60 p-3">
-      <p className="mb-1.5 text-xs font-bold text-accent-700">提醒</p>
-      <ul className="space-y-1">
-        {items.map(i => (
-          <li key={i.key} className="flex items-baseline justify-between gap-3 text-sm">
-            <span className="min-w-0 font-medium text-neutral-700">{i.title}</span>
-            <span className="shrink-0 text-xs font-bold text-accent-700">
-              {i.days === 0 ? '今天' : `${i.days} 天後`}
-            </span>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }

@@ -102,3 +102,17 @@ export const ROLE_ANNIVERSARY_TEMPLATES: Record<PersonRole, string[]> = {
   family: ['生日', '認識紀念日'],
   coworker: ['生日', '認識紀念日'],
 }
+
+// 模組(tab)名稱:「紀念日/約定」是對象限定的說法,其他身份用中性詞
+export function moduleLabel(m: ModuleKey, isPartner: boolean): string {
+  const labels: Record<ModuleKey, string> = {
+    quick: '速查',
+    preferences: '喜好',
+    places: '地點',
+    relations: '人物',
+    gifts: '禮物',
+    anniversaries: isPartner ? '紀念日' : '重要日子',
+    promises: isPartner ? '約定' : '承諾',
+  }
+  return labels[m]
+}
