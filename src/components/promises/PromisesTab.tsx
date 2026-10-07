@@ -5,6 +5,14 @@ import { fmt } from '../../utils/dates'
 import { promisesRepo, today } from '../../db/repo'
 import type { PromiseItem, PersonRole } from '../../types'
 
+const PROMISE_PLACEHOLDER: Record<PersonRole, string> = {
+  partner: '例:一起去日本跨年',
+  friend: '例:答應幫忙搬家、借的書要還',
+  family: '例:過年前帶全家去吃飯',
+  coworker: '例:週五前回覆提案意見',
+  client: '例:下次拜訪帶新品報價',
+}
+
 export function PromisesTab({ personId, role, items }: { personId: string; role: PersonRole; items: PromiseItem[] }) {
   const [editing, setEditing] = useState<PromiseItem | 'new' | null>(null)
   const isPartner = role === 'partner'
@@ -69,7 +77,7 @@ export function PromisesTab({ personId, role, items }: { personId: string; role:
         <PromiseSheet
           personId={personId}
           word={word}
-          isPartner={isPartner}
+          role={role}
           existing={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
         />
@@ -78,10 +86,10 @@ export function PromisesTab({ personId, role, items }: { personId: string; role:
   )
 }
 
-function PromiseSheet({ personId, word, isPartner, existing, onClose }: {
+function PromiseSheet({ personId, word, role, existing, onClose }: {
   personId: string
   word: string
-  isPartner: boolean
+  role: PersonRole
   existing: PromiseItem | null
   onClose: () => void
 }) {
@@ -108,7 +116,7 @@ function PromiseSheet({ personId, word, isPartner, existing, onClose }: {
             className={inputCls}
             value={content}
             onChange={e => setContent(e.target.value)}
-            placeholder={isPartner ? '例:一起去日本跨年' : '例:下次拜訪帶新品報價'}
+            placeholder={PROMISE_PLACEHOLDER[role]}
           />
         </Field>
         <Field label="備註(選填)">

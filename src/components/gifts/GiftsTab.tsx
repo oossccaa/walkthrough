@@ -12,7 +12,7 @@ export function GiftsTab({ personId, items }: { personId: string; items: Gift[] 
 
   return (
     <div className="space-y-3">
-      <SectionCard title="想要的" subtitle="願望清單,送禮靈感來源">
+      <SectionCard title="想要的" subtitle="對方提過需要或想要的東西,送禮時參考">
         {wishlist.length === 0 ? (
           <EmptyState text="還沒記錄想要的東西" />
         ) : (
@@ -126,17 +126,17 @@ function GiftSheet({ personId, existing, onClose }: {
                 <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
               </Field>
               <Field label="場合(選填)">
-                <input className={inputCls} value={occasion} onChange={e => setOccasion(e.target.value)} placeholder="生日、道歉…" />
+                <input className={inputCls} value={occasion} onChange={e => setOccasion(e.target.value)} placeholder="生日、謝禮、升遷祝賀…" />
               </Field>
             </div>
             <Field label="對方的反應(選填)">
-              <input className={inputCls} value={reaction} onChange={e => setReaction(e.target.value)} placeholder="例:超喜歡,放在床頭每天點" />
+              <input className={inputCls} value={reaction} onChange={e => setReaction(e.target.value)} placeholder="例:很喜歡,當天就用上了" />
             </Field>
           </>
         ) : (
           <>
-            <Field label="什麼時候提到的?(選填)">
-              <input className={inputCls} value={sourceContext} onChange={e => setSourceContext(e.target.value)} placeholder="例:逛街時盯著看很久" />
+            <Field label="怎麼知道對方想要?(選填)">
+              <input className={inputCls} value={sourceContext} onChange={e => setSourceContext(e.target.value)} placeholder="例:聊天時說舊的耳機一直斷線" />
             </Field>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={purchased} onChange={e => setPurchased(e.target.checked)} className="h-4 w-4 accent-accent-500" />

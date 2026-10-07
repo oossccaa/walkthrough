@@ -19,23 +19,30 @@ export const ROLE_STYLE: Record<PersonRole, string> = {
 
 export const ROLE_ORDER: PersonRole[] = ['partner', 'friend', 'coworker', 'client', 'family']
 
-// 各身份可記錄的模組(對象最完整)
+// 各身份可記錄的模組:朋友 / 家人 / 同事 / 客戶一律相同,對象另外多「地點」
 export type ModuleKey = 'quick' | 'preferences' | 'places' | 'relations' | 'gifts' | 'anniversaries' | 'promises'
+
+const COMMON_MODULES: ModuleKey[] = ['quick', 'preferences', 'relations', 'gifts', 'anniversaries', 'promises']
 
 export const ROLE_MODULES: Record<PersonRole, ModuleKey[]> = {
   partner: ['quick', 'preferences', 'places', 'relations', 'gifts', 'anniversaries', 'promises'],
-  friend: ['quick', 'preferences', 'gifts', 'anniversaries'],
-  family: ['quick', 'preferences', 'gifts', 'anniversaries'],
-  coworker: ['quick', 'preferences', 'anniversaries'],
-  client: ['quick', 'preferences', 'relations', 'gifts', 'anniversaries', 'promises'],
+  friend: COMMON_MODULES,
+  family: COMMON_MODULES,
+  coworker: COMMON_MODULES,
+  client: COMMON_MODULES,
 }
+
+/** 可記公司 / 職稱的身份(對象以外都可以) */
+export const hasWorkInfo = (role: PersonRole) => role !== 'partner'
+
+const COMMON_HINT = '喜好、人物、禮物、重要日子、承諾,可記公司職稱'
 
 export const ROLE_HINT: Record<PersonRole, string> = {
   partner: '最完整:喜好、地點、人物、禮物、紀念日、約定',
-  friend: '喜好、禮物、重要日子',
-  family: '喜好、禮物、重要日子',
-  coworker: '喜好、重要日子,可記公司職稱',
-  client: '業務向:喜好、關鍵人物、送禮、重要日子、承諾',
+  friend: COMMON_HINT,
+  family: COMMON_HINT,
+  coworker: COMMON_HINT,
+  client: COMMON_HINT,
 }
 
 export const CATEGORY_LABEL: Record<PreferenceCategory, string> = {
@@ -85,13 +92,14 @@ export const RELATION_TYPE_LABEL: Record<RelationType, string> = {
   ex: '前任',
 }
 
-// 人物 tab 依身份顯示的關係區塊(同時決定表單可選的類型)
+// 人物 tab 依身份顯示的關係區塊(同時決定表單可選的類型);
+// 非對象身份可選的類型相同,只是排序依身份把最常用的放第一個(第一個區塊永遠顯示)
 export const ROLE_RELATION_TYPES: Record<PersonRole, RelationType[]> = {
   partner: ['family', 'friend', 'ex'],
+  friend: ['friend', 'family', 'work'],
+  family: ['family', 'friend', 'work'],
+  coworker: ['work', 'family', 'friend'],
   client: ['work', 'family', 'friend'],
-  friend: ['family', 'friend'],
-  family: ['family', 'friend'],
-  coworker: ['work'],
 }
 
 // 紀念日快速範本(依身份)

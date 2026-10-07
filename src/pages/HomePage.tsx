@@ -6,6 +6,7 @@ import { THEMES, isThemeKey } from '../theme'
 import { inputCls } from '../components/ui'
 import { ReminderBanner, useReminders } from '../components/ReminderBanner'
 import type { Person } from '../types'
+import { DEMO_VARIANT_LABEL, type DemoVariant } from '../mock'
 
 // 人數少時一眼就看得完,不需要搜尋框
 const SEARCH_MIN_PERSONS = 4
@@ -82,10 +83,18 @@ export function HomePage() {
           >
             ＋ 新增第一個人
           </Link>
-          <br />
-          <button onClick={loadDemo} className="mt-3 text-xs text-neutral-500 underline">
-            先用示範資料看看畫面
-          </button>
+          <p className="mt-5 text-xs text-neutral-500">或先用示範資料看看畫面:</p>
+          <div className="mt-2 flex justify-center gap-2">
+            {(Object.keys(DEMO_VARIANT_LABEL) as DemoVariant[]).map(v => (
+              <button
+                key={v}
+                onClick={() => loadDemo(v)}
+                className="rounded-full border border-neutral-300 bg-paper px-3.5 py-1.5 text-xs font-bold text-neutral-600 active:bg-accent-50"
+              >
+                {DEMO_VARIANT_LABEL[v]}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { SectionCard, Chip, Field, inputCls, PrimaryButton, DeleteButton, BackButton, useBack, useDirty } from '../components/ui'
 import { useToast } from '../components/toast'
-import { ROLE_LABEL, ROLE_ORDER, ROLE_HINT, ROLE_MODULES, moduleLabel } from '../labels'
+import { ROLE_LABEL, ROLE_ORDER, ROLE_HINT, ROLE_MODULES, moduleLabel, hasWorkInfo } from '../labels'
 import { useApp } from '../store'
 import { addPerson, updatePerson, deletePerson } from '../db/repo'
 import { THEMES, THEME_KEYS, isThemeKey } from '../theme'
@@ -86,7 +86,7 @@ function PersonForm({ existing }: { existing?: Person }) {
     const metAt = (metDate || metPlace || metStory)
       ? { date: metDate || undefined, place: metPlace.trim() || undefined, story: metStory.trim() || undefined }
       : undefined
-    // 公司/職稱在非工作身份時只是隱藏不顯示,照樣保留,改回客戶/同事時還在
+    // 公司/職稱在對象身份時只是隱藏不顯示,照樣保留,改回其他身份時還在
     const data = {
       name: name.trim(),
       nickname: nickname.trim() || undefined,
@@ -143,7 +143,7 @@ function PersonForm({ existing }: { existing?: Person }) {
           <Field label="暱稱(選填)">
             <input className={inputCls} value={nickname} onChange={e => setNickname(e.target.value)} />
           </Field>
-          {(role === 'client' || role === 'coworker') && (
+          {hasWorkInfo(role) && (
             <div className="grid grid-cols-2 gap-3">
               <Field label="公司(選填)">
                 <input className={inputCls} value={company} onChange={e => setCompany(e.target.value)} placeholder="例:大同貿易" />

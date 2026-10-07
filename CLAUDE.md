@@ -1,186 +1,114 @@
-# CLAUDE.md — 戀愛攻略筆記 Web App
+# CLAUDE.md — Tiedto 個人 CRM
 
 ## 專案概述
 
-一個「個人版戀愛 CRM」web app,用來記錄曖昧對象/女友的喜好、重要人物、紀念日、禮物與約定,幫助使用者在約會前快速回顧關鍵資訊。
+**Tiedto** 是一個「個人 CRM」web app:依身份(對象 / 朋友 / 同事 / 客戶 / 家人)記錄生活與工作中重要的人——喜好、關鍵人物、重要日子、禮物、承諾與行程,幫助使用者在見面前快速回顧關鍵資訊。
 
-**核心價值:約會前 30 秒速查,不再忘記她說過的話。**
+**核心價值:見面前 30 秒速查,不再忘記對方說過的話、答應過的事。**
 
-**隱私是最高原則**:所有資料只存在使用者本地(localStorage 或 IndexedDB),不上傳任何伺服器、不需要帳號、不接任何第三方分析。
+**隱私是最高原則**:所有資料只存在使用者本地(IndexedDB),不上傳任何伺服器、不需要帳號、不接任何第三方分析。
 
-## 技術選型
+> 本專案前身是「戀愛攻略筆記」,已轉型為通用個人 CRM。
+> - **「對象(partner)」的功能全部保留,且仍是模組最完整的身份**:地點(去過 / 想去 / 約好一起去)、前任與交往長度、紀念日「第一次___」範本、「在一起 N 天」、約定清單、約會行程等,升級時不可刪減或弱化。
+> - 其他身份(朋友 / 家人 / 同事 / 客戶)一律開放同一組模組、換成中性用詞,只有對象多「地點」;不是把對象功能改掉。
+> - 共用的文案與預設保持中性,不預設性別;戀愛專屬用詞只出現在對象身份。
 
-- 前端框架:React + Vite(或 Next.js static export,擇一,以簡單為主)
-- 樣式:Tailwind CSS
-- 儲存策略:**本地為主 + 使用者自己的雲端備份**
-  - 主儲存:IndexedDB(用 Dexie.js 封裝),所有讀寫都走本地
-  - 備份:匯出加密後的 JSON 到使用者自己的 Google Drive(Phase 2/3 實作,見下方)
-  - 不做即時同步;多裝置以「備份 → 還原」方式處理,大幅降低複雜度
+## 技術選型(已實作)
+
+- React 19 + Vite 6 + TypeScript
+- Tailwind CSS v4(`@tailwindcss/vite`)
+- 路由:react-router-dom v7,使用 `HashRouter`(GitHub Pages 無 SPA fallback)
+- 儲存:IndexedDB,用 Dexie 4 + `dexie-react-hooks`(`useLiveQuery`)
+- 日期:date-fns,所有日期一律存 ISO 字串(`yyyy-MM-dd` 或完整 ISO)
+- PWA:vite-plugin-pwa(可加到主畫面、離線可用)
+- 部署:GitHub Pages(`.github/workflows/deploy.yml`),`vite.config.ts` 的 `base` 需與 repo 名一致
 - 不需要自架後端、不需要資料庫伺服器
-- 需支援手機瀏覽器(mobile-first 設計,主要使用情境是出門前/約會中偷看手機)
-- 加分項:PWA(可加到主畫面、離線可用)
-- 加分項:資料匯出/匯入(JSON 檔),讓使用者自行備份
+- Mobile-first(容器 `max-w-md`),主要使用情境是出門前 / 見面中偷看手機
+
+指令:`npm run dev`、`npm run build`(含 `tsc --noEmit` 型別檢查)。
+
+## 核心概念:身份(Role)驅動模組
+
+每個人都有一個 `role`,新增時先選身份,身份決定該人可用的模組與文案。設定集中在 [src/labels.ts](src/labels.ts):
+
+| 身份 | key | 可用模組(`ROLE_MODULES`) |
+|---|---|---|
+| 對象 | `partner` | 速查、喜好、地點、人物、禮物、紀念日、約定(最完整) |
+| 朋友 / 家人 / 同事 / 客戶 | `friend` / `family` / `coworker` / `client` | 速查、喜好、人物、禮物、重要日子、承諾(全部相同,`COMMON_MODULES`;可記公司/職稱) |
+
+相關對照表(新增身份時都要一起補):
+- `ROLE_LABEL` / `ROLE_STYLE` / `ROLE_ORDER` / `ROLE_HINT`
+- `ROLE_MODULES`:該身份顯示哪些 tab
+- `ROLE_RELATION_TYPES`:人物 tab 可選的關係類型(非對象身份類型相同,只差排序)
+- `ROLE_ANNIVERSARY_TEMPLATES`:重要日子快速範本
+- 文案依身份切換:對象用「紀念日 / 約定」,其他身份用「重要日子 / 承諾」(見 `PersonPage` 的 `tabLabel`、`QuickCard`)
+- 顏色收斂:只有「對象」用主色,其餘身份標籤用中性灰
 
 ## 資料模型
 
-### Person(對象)
-支援多位對象(曖昧期可能同時進行多條線)。
+型別集中在 [src/types.ts](src/types.ts),以該檔為準。摘要:
 
-```
-Person {
-  id: string
-  name: string
-  nickname?: string
-  birthday?: date
-  metAt?: { date: date, place?: string, story?: string }  // 認識的日期與場合
-  status: 'crush' | 'ambiguous' | 'dating' | 'archived'    // 單戀 / 曖昧 / 交往 / 封存
-  statusHistory: [{ status, date }]                        // 狀態變更紀錄
-  avatar?: string (本地圖片, base64 或 blob)
-  notes?: string
-  createdAt, updatedAt
-}
-```
+- **Person**:`name`、`nickname?`、`birthday?`、`metAt?{date,place,story}`、`role`、`company?`、`jobTitle?`、`color?`(個人主題色 key)、`avatar?`、`notes?`、`createdAt`、`updatedAt`
+- **Preference**:`category`(food / drink / alcohol / music / movie_tv / character / idol / hobby / other)、`name`、`sentiment`(love / like / dislike / hate)、`note?`、`detail?`、`sourceContext?`
+- **Place**:`type`(visited / she_wants_to_go / promised_together)、`date?`、`completed?`、`completedDate?`、`note?`
+- **RelationPerson**:`type`(family / friend / ex / work)、`name`、`role?`、`traits?`、`datingStart?` / `datingEnd?`(僅 ex,UI 自動算交往長度)、`note?`
+- **Gift**:`direction`(given / wishlist)、`date?`、`occasion?`、`reaction?`、`price?`、`sourceContext?`、`purchased?`
+- **Anniversary**:`title`、`date`、`recurring`、`note?`;顯示距今天數 / 下次週年倒數;對象若有含「在一起」的紀念日,主頁顯示「在一起 N 天」
+- **PromiseItem**:`content`、`completed`、`completedDate?`、`note?`
+- **Itinerary**:`personId?`、`date`、`stops: ItineraryStop[]`(`place`、`timeType: range | fixed`、`startTime?`、`endTime?`、`note?`);一天一份行程,從全域 FAB 新增
 
-### Preference(喜好)
-```
-Preference {
-  id: string
-  personId: string
-  category: 'food' | 'drink' | 'alcohol' | 'music' | 'movie_tv' |
-            'character' | 'idol' | 'hobby' | 'other'
-  name: string                        // 例:香菜、威士忌、進擊的巨人
-  sentiment: 'love' | 'like' | 'dislike' | 'hate'
-  note?: string                       // 例:「不吃香菜但可接受九層塔」「只喝 highball 不喝純飲」
-  detail?: string                     // 最喜歡的角色、專輯等子項目
-  sourceContext?: string              // 她什麼時候/什麼情境提到的
-  createdAt, updatedAt
-}
-```
+### 歷史包袱(勿隨意改名)
+- Dexie 資料庫名稱仍是 `'love-notes'`、class 名 `LoveDB`;改名會讓既有使用者資料「消失」,不要動
+- `PlaceType` 的 `'she_wants_to_go'` 是舊命名,畫面顯示為「想去」;要改需寫 Dexie migration
+- localStorage key 前綴為 `ln:`
+- Schema 變更一律新增 `this.version(n)` + `upgrade()`,不要修改舊版本定義(v2 已將 `status/statusHistory` 遷移為 `role`)
 
-### Place(地點)
-```
-Place {
-  id: string
-  personId: string
-  name: string
-  type: 'visited' | 'she_wants_to_go' | 'promised_together'
-  // visited: 她去過的 / promised_together: 約定好要一起去的
-  date?: date                         // 去過的日期
-  completed?: boolean                 // 約定地點達成後打勾
-  completedDate?: date                // 達成後自動轉為共同回憶
-  note?: string
-}
-```
+## 已完成功能
 
-### Relationship(人物關係)
-```
-RelationPerson {
-  id: string
-  personId: string
-  type: 'family' | 'friend' | 'ex'
-  name: string
-  role?: string                       // 例:媽媽、妹妹、閨蜜、大學同學
-  traits?: string                     // 特徵備註,見面前速查用
-  // 以下僅 type = 'ex' 使用:
-  datingStart?: date
-  datingEnd?: date
-  // UI 需自動計算並顯示交往長度
-  note?: string                       // 分手原因、地雷話題等
-}
-```
+- 名冊首頁:多人列表,依身份分組
+- 人物主頁:依身份顯示 tab,個人專屬主題色(離開頁面還原全域主題)
+- 速查卡(`QuickCard`):下一次行程、未完成承諾、飲食地雷、最近喜好、送禮靈感、重要日子倒數、重要人物小抄
+- 喜好 / 地點 / 人物 / 禮物 / 紀念日 / 約定 各模組 CRUD
+- 行程規劃(`ItineraryFab`)
+- 到期提醒(`src/notify.ts`):重要日子前 3 天、行程今明兩天;畫面橫幅 + 可選瀏覽器通知(每項每天一次)
+- 主題:20 種色系(全域 + 每人)
+- 本機 JSON 匯出 / 匯入(整份覆蓋)
+- Google Drive 加密備份(`src/backup/`):Web Crypto PBKDF2 + AES-GCM,只存 `drive.appdata`,整份覆蓋還原
+- 示範資料(`src/mock.ts`):分男生 / 女生視角兩版,只差「對象」;朋友男女各一且為團體情境,示範內容須正派,不能有「攻略」感
+- PWA
 
-### Gift(禮物)
-```
-Gift {
-  id: string
-  personId: string
-  direction: 'given' | 'wishlist'     // 送過的 / 她想要的
-  name: string
-  date?: date                         // 送出日期
-  occasion?: string                   // 生日、聖誕節、道歉…
-  reaction?: string                   // 她的反應
-  price?: number
-  sourceContext?: string              // wishlist 用:她何時、什麼情境提到想要
-  purchased?: boolean                 // wishlist 已買待送
-}
-```
+## 規劃中(個人 CRM 升級方向)
 
-### Anniversary(紀念日)
-```
-Anniversary {
-  id: string
-  personId: string
-  title: string                       // 例:第一次見面、第一次牽手、在一起紀念日
-  date: date
-  recurring: boolean                  // 是否每年提醒
-  note?: string
-}
-```
-- 提供常用「第一次___」快速範本:第一次見面、第一次約會、第一次牽手、第一次接吻、在一起、第一次旅行
-- 顯示距今天數 / 下次週年倒數
-- 交往中對象顯示「在一起 N 天」
+實作前先與使用者確認範圍與優先順序:
 
-### Promise(約定清單)
-```
-Promise {
-  id: string
-  personId: string
-  content: string                     // 以後要一起做的事
-  completed: boolean
-  completedDate?: date
-  note?: string
-}
-```
-- 類似共同 bucket list,完成後轉為回憶區顯示
+1. **互動紀錄**:記錄每次見面 / 通話 / 訊息(日期、管道、摘要),人物主頁顯示「上次聯絡 N 天前」
+2. **聯絡頻率提醒**:可為每個人設定期望聯絡週期(例:客戶每月、朋友每季),逾期列入提醒
+3. **全域搜尋**:跨人物搜尋喜好、人物小抄、備註
+4. **標籤**:人物自訂標籤(例:大學同學、A 專案),名冊可依標籤篩選
+5. **時間軸視圖**:把重要日子、去過的地點、送過的禮物、互動紀錄依時間排列成關係大事記
+6. **PIN 碼鎖 / 偽裝入口**(加分項)
 
-## 功能規劃(分三期)
-
-### Phase 1 — MVP
-1. 對象管理:新增/編輯/切換對象,狀態管理
-2. 喜好庫:分類瀏覽 + 新增,依 sentiment 標色(超愛/喜歡/不喜歡/地雷)
-3. 紀念日:清單 + 倒數 + 「第一次___」範本
-4. 資料持久化(IndexedDB)+ JSON 匯出/匯入
-
-### Phase 2
-5. 地點模組(去過/想去/約定,約定完成轉回憶)
-6. 禮物模組(送過 + 願望清單)
-7. 人物關係(家人/朋友/前任,前任自動算交往長度)
-
-### Phase 3
-8. **約會前速查卡(殺手級功能)**:一鍵顯示單一對象的——
-   - 飲食地雷(dislike/hate 的食物飲品)
-   - 最近新增的喜好與她提過想要的禮物
-   - 最近的紀念日倒數
-   - 重要人物小抄(閨蜜名字、地雷話題)
-9. 約定清單(bucket list)
-10. 時間軸視圖:把紀念日、去過的地點、送過的禮物依時間排列成關係大事記
-11. PWA 支援
-12. **Google Drive 加密備份**:
-    - 使用 Google Drive API + OAuth(僅要求 `drive.appDataFolder` 或 `drive.file` 最小權限)
-    - 備份前先以使用者設定的密碼在客戶端加密(Web Crypto API,AES-GCM + PBKDF2 派生金鑰),Drive 上只存密文
-    - 提供「立即備份」與「從備份還原」兩個動作;可選每次關閉前提醒備份
-    - 還原採整份覆蓋(以 updatedAt 提示使用者哪份較新),不做欄位級合併
+新增模組時:型別加到 `types.ts` → Dexie 新版本 + 加入 `ALL_TABLES`(匯出 / 匯入 / 備份才會帶到)→ `labels.ts` 的 `ModuleKey` 與 `ROLE_MODULES` → `PersonPage` tab → 視需要加到 `QuickCard` 與 `notify.ts`。
 
 ## UI/UX 原則
 
 - Mobile-first,單手可操作
-- 首頁 = 對象列表(或單一對象時直接進入該對象主頁)
-- 對象主頁用 tab 或卡片分區:喜好 / 地點 / 人物 / 禮物 / 紀念日 / 約定
-- 新增資料要快:常用項目提供快速範本與 chip 選擇,少打字
-- 敏感 app,加分項:可設定 PIN 碼鎖或偽裝入口
+- 首頁 = 名冊(依身份分組),一律多人模式
+- 新增資料要快:常用項目提供快速範本與 chip 選擇,少打字(共用元件見 [src/components/ui.tsx](src/components/ui.tsx):`SectionCard`、`Chip`、`BottomSheet`、`Field` 等)
+- 文案性別中性,依身份切換用詞
 - 語言:繁體中文介面
 
 ## 開發約定
 
-- 元件放 `src/components/`,依模組分資料夾
-- 資料層統一封裝在 `src/db/`(Dexie schema + CRUD hooks)
-- 型別定義集中在 `src/types.ts`
-- 日期處理用 date-fns
-- 先寫 Phase 1,確認可用後再往下做
+- 元件放 `src/components/`,依模組分資料夾;頁面放 `src/pages/`
+- 資料層統一封裝在 `src/db/`(`db.ts` schema、`repo.ts` CRUD)
+- 型別定義集中在 `src/types.ts`;身份 / 分類的標籤與對照表集中在 `src/labels.ts`
+- 日期處理用 date-fns,共用函式在 `src/utils/dates.ts`
+- 主題色系在 `src/theme.ts`
 
 ## 明確不做的事
 
-- 不做帳號系統、不做即時雲端同步(僅做使用者自己 Google Drive 的加密備份/還原)
+- 不做帳號系統、不做即時雲端同步(僅做使用者自己 Google Drive 的加密備份 / 還原,多裝置以「備份 → 還原」處理)
 - 不把資料存到任何第三方後端(Supabase / Firebase 等一律不用)
 - 不接任何 analytics / tracking
 - 不做社群或分享功能(這是私人筆記)

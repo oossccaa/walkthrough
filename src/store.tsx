@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db/db'
 import { importAll, clearAll } from './db/repo'
-import { mockBundle } from './mock'
+import { mockBundle, type DemoVariant } from './mock'
 import { useLocalStorage } from './utils/useLocalStorage'
 import { applyGlobalTheme, DEFAULT_THEME, isThemeKey, type ThemeKey } from './theme'
 import type { Person } from './types'
@@ -12,7 +12,7 @@ interface AppState {
   persons: Person[]
   theme: ThemeKey
   setTheme: (t: ThemeKey) => void
-  loadDemo: () => Promise<void>
+  loadDemo: (variant: DemoVariant) => Promise<void>
   resetAll: () => Promise<void>
 }
 
@@ -35,7 +35,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setThemeRaw(t)
       applyGlobalTheme(t)
     },
-    loadDemo: () => importAll(mockBundle()),
+    loadDemo: variant => importAll(mockBundle(variant)),
     resetAll: () => clearAll(),
   }
 

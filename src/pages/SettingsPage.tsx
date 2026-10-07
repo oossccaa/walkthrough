@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { SectionCard, Field, inputCls, PrimaryButton, BackButton, Modal } from '../components/ui'
 import { useToast } from '../components/toast'
+import { DEMO_VARIANT_LABEL, type DemoVariant } from '../mock'
 import { useApp } from '../store'
 import { THEMES, THEME_KEYS } from '../theme'
 import { useLocalStorage } from '../utils/useLocalStorage'
@@ -41,25 +42,28 @@ export function SettingsPage() {
       <LocalBackupSection />
       <DriveSection />
 
-      <SectionCard title="示範資料">
+      <SectionCard title="示範資料" subtitle="兩版只差「對象」那一位,其他人都一樣">
         <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={async () => {
-              if (!confirm('載入示範資料會覆蓋目前所有資料,確定?')) return
-              await loadDemo()
-              toast('已載入示範資料')
-            }}
-            className="rounded-xl border border-neutral-200 bg-paper py-3 text-sm font-bold text-neutral-700 active:bg-neutral-50"
-          >
-            載入示範資料
-          </button>
+          {(Object.keys(DEMO_VARIANT_LABEL) as DemoVariant[]).map(v => (
+            <button
+              key={v}
+              onClick={async () => {
+                if (!confirm(`載入示範資料(${DEMO_VARIANT_LABEL[v]})會覆蓋目前所有資料,確定?`)) return
+                await loadDemo(v)
+                toast(`已載入示範資料(${DEMO_VARIANT_LABEL[v]})`)
+              }}
+              className="rounded-xl border border-neutral-200 bg-paper py-3 text-sm font-bold text-neutral-700 active:bg-neutral-50"
+            >
+              示範:{DEMO_VARIANT_LABEL[v]}
+            </button>
+          ))}
           <button
             onClick={async () => {
               if (!confirm('確定要清空所有資料?此動作無法復原,建議先匯出備份。')) return
               await resetAll()
               toast('已清空所有資料')
             }}
-            className="rounded-xl border border-danger-line bg-paper py-3 text-sm font-bold text-danger active:bg-danger-soft"
+            className="col-span-2 rounded-xl border border-danger-line bg-paper py-3 text-sm font-bold text-danger active:bg-danger-soft"
           >
             清空重來
           </button>
